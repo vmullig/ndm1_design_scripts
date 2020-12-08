@@ -1,81 +1,175 @@
 <ROSETTASCRIPTS>
-    <!--
-        Estimate delta-G of binding.  Variant for round 4 designs.
-    -->
+        # Given an input structure of a candidate inhibitor peptide bound to NDM-1, this
+        # script estimates the delta-G of binding using the (poorly-named) ddG protocol.
+        # It carries out relaxation of both bound and unbound structures, allowing small
+        # motions of the hinge loop.
+        #
+        # This script was tested with the current version of Rosetta (Git SHA1
+        # cb360c57ed4ba63d45678afba4bf6a39d8dd958d). It should be compatible with all Rosetta 
+        # versions after weekly release 2020.11.
+ 
+    # Scoring functions are defined in this section:
     <SCOREFXNS>
+        # The default Rosetta energy function, ref2015, with the metalbinding constraint
+        # turned OFF explicitly.  We will use this for scoring the bound and unbound states, 
+        # to ensure that the metal coordination is not artificially inflating the score.
         <ScoreFunction name="r15" weights="ref2015" >
             <Reweight scoretype="metalbinding_constraint" weight="0.0" />
         </ScoreFunction>
+        # The default energy function with the chainbreak term upweighted:
         <ScoreFunction name="r15_cst" weights="ref2015_cst" >
             <Reweight scoretype="metalbinding_constraint" weight="1.0" />
             <Reweight scoretype="chainbreak" weight="20.0" />
         </ScoreFunction>
+        # The default energy function with the chainbreak term upweighted and the metalbinding
+        # constraint term explicitly turned OFF.  See note above.
         <ScoreFunction name="r15_cst_nometal" weights="ref2015_cst" >
             <Reweight scoretype="metalbinding_constraint" weight="0.0" />
             <Reweight scoretype="chainbreak" weight="20.0" />
         </ScoreFunction>
     </SCOREFXNS>
+ 
+    # Residue selectors, used to configure modules that operate on a subset of a pose, are
+    # declared here:
     <RESIDUE_SELECTORS>
-        <Index name="select_pep" resnums="230-237" />
-        <Index name="select_hinge_loop" resnums="23-32" />
-        <Neighborhood name="select_near_pep" selector="select_pep" distance="10.0" include_focus_in_subset="true" />
-        <StoredResidueSubset name="selected_near_pep" subset_name="interface" /> <!-- Stored selection. -->
+        # Select the peptide:
+        <Index name="select_pep" resnums="234-241" />
+ 
+        # Select the flexible hinge loop:
+        <Index name="select_hinge_loop" resnums="25-33" />
+ 
+        # Select the vicinity of the peptide (including the peptide):
+        <Neighborhood name="select_near_pep" selector="select_pep" distance="10.0"
+            include_focus_in_subset="true" />
+ 
+        # Select residues that are not in the vicinity of the peptide.  This selection 
+        # excludes the peptide:
         <Not name="select_not_near_pep" selector="select_near_pep" />
-        <Not name="selected_not_near_pep" selector="selected_near_pep" /> <!-- Stored selection. -->
-        <Index name="select_upper_cutpoints" resnums="28,230" />
-        <Index name="select_lower_cutpoints" resnums="27,237" />
+ 
+        # Select a previously-stored selection of residues representing the interface between
+        # peptide and target.
+        <StoredResidueSubset name="selected_near_pep" subset_name="interface" />
+ 
+        # Select those residues that are not in the stored selection above.
+        <Not name="selected_not_near_pep" selector="selected_near_pep" />
+ 
+        # Select the upper residue in the cutpoints in the peptide macrocycle and in the
+        # hinge loop (to apply the cutpoint upper variant type):
+        <Index name="select_upper_cutpoints" resnums="30,234" />
+ 
+        # Select the lower residue in the cutpoints in the peptide macrocycle and in the
+        # hinge loop (to apply the cutpoint lower variant type):
+        <Index name="select_lower_cutpoints" resnums="29,241" />
     </RESIDUE_SELECTORS>
-    <PACKER_PALETTES>
-    </PACKER_PALETTES>
+ 
+    # Task operations, which control the Rosetta packer during rotamer optimization, are 
+    # defined here.  Note that we do no design in this script, but still use the packer to 
+    # optimize rotamer conformation:
     <TASKOPERATIONS>
+        # Prevent design everywhere:
         <RestrictToRepacking name="repack_only" />
+ 
+        # Prevent repacking far from the peptide:
         <OperateOnResidueSubset name="only_near_pep" selector="selected_not_near_pep" >
             <PreventRepackingRLT />
         </OperateOnResidueSubset>
+ 
+        # Ensure that the input rotamer is included in the set of rotamers considered during
+        # rotamer optimization:
         <IncludeCurrent name="include_current" />
+ 
+        # Enable finer discretization of rotamers:
         <ExtraRotamersGeneric name="ex1_ex2" ex1="true" ex2="true" extrachi_cutoff="0" />
     </TASKOPERATIONS>
+ 
+    # Jump selectors select rigid-body transforms when configuring move map factories, which
+    # control energy minimization steps:
     <JUMP_SELECTORS>
+        # Select the rigid-body degree of freedom connecting the target to the peptide:
         <JumpIndex name="select_pep_jump" jump="4" />
     </JUMP_SELECTORS>
+ 
+    # Move map factories control energy minimization steps by defining which degrees of
+    # freedom are movable and which are fixed:
     <MOVE_MAP_FACTORIES>
+        # The move map factory for the relaxation that is carried out on the bound complex.
+        # Here, we allow only the side chains near the peptide, only the backbone of the
+        # peptide and the hinge loop, and only the rigid-body transform from NDM-1 to peptide
+        # to move during energy minimization:
         <MoveMapFactory name="mmf_prerelax" bb="false" chi="false" jumps="0" >
             <Chi enable="true" residue_selector="selected_near_pep" />
             <Jumps enable="true" jump_selector="select_pep_jump" />
             <Backbone enable="true" residue_selector="select_hinge_loop" />
             <Backbone enable="true" residue_selector="select_pep" />
         </MoveMapFactory>
+ 
+        # The move map factory for the relaxation that is carried out on the separated
+        # peptide and target.  Here, we allow only the side chains that had been at the
+        # interface, and only the backbone of the peptide and the hinge loop to move.  All
+        # rigid-body degrees of freedom are fixed during this relaxation:
         <MoveMapFactory name="mmf_post_separation" bb="false" chi="false" jumps="0" >
             <Chi enable="true" residue_selector="selected_near_pep" />
             <Backbone enable="true" residue_selector="select_hinge_loop" />
             <Backbone enable="true" residue_selector="select_pep" />
         </MoveMapFactory>
     </MOVE_MAP_FACTORIES>
-    <SIMPLE_METRICS>
-    </SIMPLE_METRICS>
+ 
+    # Movers alter a structure in some way.  Here we define a mover that will be used by
+    # the Ddg filter, which repacks and energy-minimizes the separated peptide and target:
     <MOVERS>
         <FastDesign name="frlx_for_filter" repeats="3" scorefxn="r15_cst_nometal"
-            task_operations="repack_only,only_near_pep,include_current,ex1_ex2" movemap_factory="mmf_post_separation" />
+            task_operations="repack_only,only_near_pep,include_current,ex1_ex2"
+            movemap_factory="mmf_post_separation"
+        />
     </MOVERS>
+ 
+    # Filters are used to measure properties of a structure and to make pass/fail decisions.
+    # Here, we define the Ddg filter that will be used to measure the energy of the bound and
+    # separated structures, and to report the difference.  This filter takes as input a
+    # FastRelax mover, defined above, which is applied to the separated complex.
     <FILTERS>
-        <Ddg name="ddg" jump="4" confidence="0" threshold="0.0" scorefxn="r15" repeats="15" repack="true" repack_unbound="false"
-            relax_unbound="true" repack_bound="false" relax_bound="false" relax_mover="frlx_for_filter"
-            translate_by="10000" extreme_value_removal="true" />
+        <Ddg name="ddg" jump="4" confidence="0" threshold="0.0" scorefxn="r15" repeats="15"
+            repack="true" repack_unbound="false" relax_unbound="true" repack_bound="false"
+            relax_bound="false" relax_mover="frlx_for_filter" translate_by="10000"
+            extreme_value_removal="true"
+        />
     </FILTERS>
+ 
+    # Here we define additional movers:
     <MOVERS>
-        <DeclareBond name="endbond" res1="230" res2="237" atom1="N" atom2="C" />
+        # Connect the ends of the peptide to make an N-to-C cyclic macrocycle:
+        <DeclareBond name="endbond" res1="234" res2="241" atom1="N" atom2="C" />
+ 
+        # Set up the kinematic directed acyclic graph (DAG) for the structure:
         <AtomTree name="foldtree" fold_tree_file="inputs/foldtree.txt" />
-        <ModifyVariantType name="add_upper_cutpoints" add_type="CUTPOINT_UPPER" residue_selector="select_upper_cutpoints" />
-        <ModifyVariantType name="add_lower_cutpoints" add_type="CUTPOINT_LOWER" residue_selector="select_lower_cutpoints"/>
-        <StoreResidueSubset name="store_interface" residue_selector="select_near_pep" subset_name="interface" />
-        <!--
-            FastDesign with the RestrictToRepacking task operation does the same thing that FastRelax would.  It is used
-            here for convenience, since it reports the residues that it is repacking (while FastRelax is less verbose).
-        -->
-        <FastDesign name="frlx" repeats="3" scorefxn="r15_cst" task_operations="repack_only,only_near_pep,include_current,ex1_ex2"
-            movemap_factory="mmf_prerelax" />
+ 
+        # Add cutpoint variant types to the residues flanking the cutpoints in the macrocycle
+        # and in the hinge loop:
+        <ModifyVariantType name="add_upper_cutpoints" add_type="CUTPOINT_UPPER"
+            residue_selector="select_upper_cutpoints" />
+        <ModifyVariantType name="add_lower_cutpoints" add_type="CUTPOINT_LOWER"
+            residue_selector="select_lower_cutpoints"/>
+ 
+        # Identify interface residues and store this residue selection in the pose for later
+        # retrieval after the complex is separated:
+        <StoreResidueSubset name="store_interface" residue_selector="select_near_pep"
+            subset_name="interface" />
+ 
+        # FastDesign with the RestrictToRepacking task operation does the same thing that
+        # FastRelax would.  It is used here for convenience for the step of relaxing the
+        # bound complex, since it reports the residues that it is repacking (while FastRelax
+        # is less verbose):
+        <FastDesign name="frlx" repeats="3" scorefxn="r15_cst"
+            task_operations="repack_only,only_near_pep,include_current,ex1_ex2"
+            movemap_factory="mmf_prerelax"
+        />
+ 
+        # Remove constraints from the pose:
         <ClearConstraintsMover name="clear_csts" />
     </MOVERS>
+ 
+    # This section puts together previously-defined movers and filters to construct an
+    # overall protocol:
     <PROTOCOLS>
         <Add mover="endbond" />
         <Add mover="foldtree" />
@@ -86,5 +180,7 @@
         <Add mover="clear_csts" />
         <Add filter="ddg" report_at_end="false" />
     </PROTOCOLS>
+ 
+    # At the end, the ref2015 energy function is used to score the output pose: 
     <OUTPUT scorefxn="r15" />
 </ROSETTASCRIPTS>
