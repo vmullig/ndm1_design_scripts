@@ -1,0 +1,90 @@
+<ROSETTASCRIPTS>
+    <!--
+        Estimate delta-G of binding.  Variant for round 4 designs.
+    -->
+    <SCOREFXNS>
+        <ScoreFunction name="r15" weights="ref2015" >
+            <Reweight scoretype="metalbinding_constraint" weight="0.0" />
+        </ScoreFunction>
+        <ScoreFunction name="r15_cst" weights="ref2015_cst" >
+            <Reweight scoretype="metalbinding_constraint" weight="1.0" />
+            <Reweight scoretype="chainbreak" weight="20.0" />
+        </ScoreFunction>
+        <ScoreFunction name="r15_cst_nometal" weights="ref2015_cst" >
+            <Reweight scoretype="metalbinding_constraint" weight="0.0" />
+            <Reweight scoretype="chainbreak" weight="20.0" />
+        </ScoreFunction>
+    </SCOREFXNS>
+    <RESIDUE_SELECTORS>
+        <Index name="select_pep" resnums="230-237" />
+        <Index name="select_hinge_loop" resnums="23-32" />
+        <Neighborhood name="select_near_pep" selector="select_pep" distance="10.0" include_focus_in_subset="true" />
+        <StoredResidueSubset name="selected_near_pep" subset_name="interface" /> <!-- Stored selection. -->
+        <Not name="select_not_near_pep" selector="select_near_pep" />
+        <Not name="selected_not_near_pep" selector="selected_near_pep" /> <!-- Stored selection. -->
+        <Index name="select_upper_cutpoints" resnums="28,230" />
+        <Index name="select_lower_cutpoints" resnums="27,237" />
+    </RESIDUE_SELECTORS>
+    <PACKER_PALETTES>
+    </PACKER_PALETTES>
+    <TASKOPERATIONS>
+        <RestrictToRepacking name="repack_only" />
+        <OperateOnResidueSubset name="only_near_pep" selector="selected_not_near_pep" >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+        <IncludeCurrent name="include_current" />
+        <ExtraRotamersGeneric name="ex1_ex2" ex1="true" ex2="true" extrachi_cutoff="0" />
+    </TASKOPERATIONS>
+    <JUMP_SELECTORS>
+        <JumpIndex name="select_pep_jump" jump="4" />
+    </JUMP_SELECTORS>
+    <MOVE_MAP_FACTORIES>
+        <MoveMapFactory name="mmf_prerelax" bb="false" chi="false" jumps="0" >
+            <Chi enable="true" residue_selector="selected_near_pep" />
+            <Jumps enable="true" jump_selector="select_pep_jump" />
+            <Backbone enable="true" residue_selector="select_hinge_loop" />
+            <Backbone enable="true" residue_selector="select_pep" />
+        </MoveMapFactory>
+        <MoveMapFactory name="mmf_post_separation" bb="false" chi="false" jumps="0" >
+            <Chi enable="true" residue_selector="selected_near_pep" />
+            <Backbone enable="true" residue_selector="select_hinge_loop" />
+            <Backbone enable="true" residue_selector="select_pep" />
+        </MoveMapFactory>
+    </MOVE_MAP_FACTORIES>
+    <SIMPLE_METRICS>
+    </SIMPLE_METRICS>
+    <MOVERS>
+        <FastDesign name="frlx_for_filter" repeats="3" scorefxn="r15_cst_nometal"
+            task_operations="repack_only,only_near_pep,include_current,ex1_ex2" movemap_factory="mmf_post_separation" />
+    </MOVERS>
+    <FILTERS>
+        <Ddg name="ddg" jump="4" confidence="0" threshold="0.0" scorefxn="r15" repeats="15" repack="true" repack_unbound="false"
+            relax_unbound="true" repack_bound="false" relax_bound="false" relax_mover="frlx_for_filter"
+            translate_by="10000" extreme_value_removal="true" />
+    </FILTERS>
+    <MOVERS>
+        <DeclareBond name="endbond" res1="230" res2="237" atom1="N" atom2="C" />
+        <AtomTree name="foldtree" fold_tree_file="inputs/foldtree.txt" />
+        <ModifyVariantType name="add_upper_cutpoints" add_type="CUTPOINT_UPPER" residue_selector="select_upper_cutpoints" />
+        <ModifyVariantType name="add_lower_cutpoints" add_type="CUTPOINT_LOWER" residue_selector="select_lower_cutpoints"/>
+        <StoreResidueSubset name="store_interface" residue_selector="select_near_pep" subset_name="interface" />
+        <!--
+            FastDesign with the RestrictToRepacking task operation does the same thing that FastRelax would.  It is used
+            here for convenience, since it reports the residues that it is repacking (while FastRelax is less verbose).
+        -->
+        <FastDesign name="frlx" repeats="3" scorefxn="r15_cst" task_operations="repack_only,only_near_pep,include_current,ex1_ex2"
+            movemap_factory="mmf_prerelax" />
+        <ClearConstraintsMover name="clear_csts" />
+    </MOVERS>
+    <PROTOCOLS>
+        <Add mover="endbond" />
+        <Add mover="foldtree" />
+        <Add mover="add_upper_cutpoints" />
+        <Add mover="add_lower_cutpoints" />
+        <Add mover="store_interface" />
+        <Add mover="frlx" />
+        <Add mover="clear_csts" />
+        <Add filter="ddg" report_at_end="false" />
+    </PROTOCOLS>
+    <OUTPUT scorefxn="r15" />
+</ROSETTASCRIPTS>
