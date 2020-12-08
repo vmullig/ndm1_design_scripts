@@ -86,11 +86,11 @@
         # Ramachandran space):
         <Not name="negative_phi" selector="positive_phi" />
  
-        # Select designable positions that can be D-amino acids:    
+        # Select designable positions that can be D-amino acids:
         <And name="designable_positive_phi"
             selectors="peptide_designable_residues,positive_phi" />
  
-        # Select designable positions that can be L-amino acids:    
+        # Select designable positions that can be L-amino acids:
         <And name="designable_negative_phi"
             selectors="peptide_designable_residues,negative_phi" />
  
@@ -142,11 +142,15 @@
     # designing, in the absence of any task operations.  Task operations
     # can then prune allowed types away in on a position-specific basis:
     <PACKER_PALETTES>
-	<CustomBaseTypePackerPalette name="design_palette"
-            additional_residue_types="AIB,A12,A91,NLU,NVL,ORN,DAB,DPP,A34,A68,A94,B30,B96,C27,B44,B67,B74,DA12,DA91,DNLU,DNVL,DORN,DDAB,DDPP,DA34,DA68,DA94,DB30,DB96,DC27,DB44,DB67,DB74"
+       # This packer palette activates a set of non-canonical amino acids with exotic
+       # side chains.  Note that the additional_residue_types line must be on a single line:
+    <CustomBaseTypePackerPalette name="design_palette"
+            additional_residue_types="AIB,A12,A91,NLU,NVL,A34,A68,A94,B30,B96,C27,B44,ORN,DPP,
+            B67,B74,DA12,DA91,DNLU,DNVL,DA34,DA68,DA94,DB30,DB96,DC27,DB44,DB67,DB74,DORN,
+            DDPP,DAB,DDAB"
         />
     </PACKER_PALETTES>
-
+ 
     # Task operations, which control the Rosetta packer, are defined here:
     <TASKOPERATIONS>
         # Only allow residues within 8 A of the peptide to repack or be designed:
@@ -235,7 +239,7 @@
     # Move map factories define which parts of a structure can move and which parts are
     # fixed during energy minimization:
     <MOVE_MAP_FACTORIES>
-        # Keep the structure fixed except for side-chains near the peptide or hinge
+        # Keep the structure fixed except for side chains near the peptide or hinge
         # loop, backbone of the peptide and hing loop, and rigid-body transforms
         # other than the transform relating the first and last residues of the
         # (split) NDM-1 chain:
@@ -312,7 +316,8 @@
         # task_operations must be listed on a single line:
         <FastDesign name="fdes1" repeats="1" scorefxn="r15_cst_voids"
             movemap_factory="frlx_mm_factory" packer_palette="design_palette"
-            task_operations="resfile_positive_phi,resfile_negative_phi,only_repack_very_near_peptide,only_design_peptide"
+            task_operations="resfile_positive_phi,resfile_negative_phi,
+            only_repack_very_near_peptide,only_design_peptide"
         />
         
         # Final relaxation (packing and energy-minimization), keeping amino acid
