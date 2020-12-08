@@ -1,8 +1,28 @@
+# On most clusters with queueing systems, it is simplest to set the number of output
+# structures to a large number and to allow Rosetta to write structures until the job times
+# out: 
 -nstruct 1000
--parser:protocol xml/design_8res.xml
+ 
+# The input RosettaScripts XML file:
+-parser:protocol xml/NDM1i_3_design_legacy.xml
+ 
+# The input PDB file (interpreted as an all-atom representation):
 -in:file:s inputs/Moriarty_xtal_chainB_pep_opened.pdb
 -in:file:fullatom
+ 
+# Output PDB files should include CONECT records for all bonds to aid visualization:
 -write_all_connect_info
+ 
+# Since glycine Ramachandran tables used for scoring are based on statistics from the Protein
+# Data Bank, they are biased towards glycine residues in positive-phi regions of Ramachandran
+# space.  When designing with D-amino acids, the following correction should always be
+# applied:
 -symmetric_gly_tables true
+ 
+# Since some jobs are expected to fail due to filters that don’t pass, we do not want the
+# executable to exit with failure status if there are some failures:
 -jd2:failed_job_exception false
--jd2:delete_old_poses true
+ 
+# The following line should be uncommented for production runs, to prevent writing of a large
+# output log:
+#-mute all
