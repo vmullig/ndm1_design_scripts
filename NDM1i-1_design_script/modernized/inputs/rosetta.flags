@@ -1,13 +1,34 @@
+# The number of designs to generate.  On most computing clusters, this can be set to a high
+# number, and jobs can be permitted to end when their time limit is reached:
 -nstruct 1000
+ 
+# Parameters adjusting the automatic setup of bonds to metal atoms:
 -metals_distance_constraint_multiplier 5.0
 -metals_angle_constraint_multiplier 5.0
-#-mute protocols.protein_interface_design.design_utils protocols.rosetta_scripts.ParsedProtocol
--in:file:s inputs/4EXS_Dcys_Lpro.pdb
--symmetric_gly_tables true
 -auto_setup_metals
+ 
+# The input PDB file (interpreted as an all-atom representation):
+-in:file:s inputs/4EXS_Dcys_Lpro.pdb
 -in:file:fullatom
+ 
+# Since glycine Ramachandran tables used for scoring are based on statistics from the Protein
+# Data Bank, they are biased towards glycine residues in positive-phi regions of Ramachandran
+# space.  When designing with D-amino acids, the following correction should always be
+# applied:
+-symmetric_gly_tables true
+ 
+# Bonds between all covalently-connected atoms will be written to the output PDB file, to aid
+# visualization in PyMol:
 -write_all_connect_info
--parser:protocol xml/design_8res_2_modernized.xml
+ 
+# The input RosettaScripts XML file:
+-parser:protocol xml/NDM1i_1_design.xml
+ 
+# Since some jobs are expected to fail due to filters that don’t pass, we do not want the
+# executable to exit with failure status if there are some failures:
 -jd2:failed_job_exception false
+ 
+# The following line should be uncommented for production runs, to prevent writing of a large
+# output log:
 #-mute all
-#-unmute core.pack.pack_rotamers core.pack.interaction_graph.interaction_graph_factory
+
