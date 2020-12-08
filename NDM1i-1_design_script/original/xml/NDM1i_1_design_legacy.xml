@@ -389,12 +389,9 @@
  
         # The PackRotamersMover optimizes side chain rotamers, permitting structure
         # refinement or design.  Here, it is used to design the peptide and to refine
-        # side chain conformations on the target.  Note that the task_operations line, split
-        # over three lines here, must be placed on a single line for this script to run:
+        # side chain conformations on the target:
         <PackRotamersMover name=softdesign scorefxn=bnv_soft
-            task_operations=use_input_rotamer,no_design_target,no_repack_target,
-            no_design_stub,no_repack_stub_dcys,D_design,L_design,D_hydrophobic_design,
-            L_hydrophobic_design
+            task_operations=use_input_rotamer,no_design_target,no_repack_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,D_hydrophobic_design,L_hydrophobic_design
         />
  
         # The MinMover relaxes a structure through gradient-descent minimizatoin.  This one
@@ -439,12 +436,9 @@
         # repulsive term in the scoring function from an initial low value.  This FastDesign
         # instance is configured to design the peptide and repack the target interface, and to
         # allow peptide side chains and backbone and target side chains to move during energy
-        # minimization.  Note that the task_operations line, split over three lines here, must
-        # be placed on a single line for this script to run:
+        # minimization:
         <FastDesign name=fdes repeats=3 scorefxn=bnv_highhbond_aacomp_cst min_type=dfpmin
-            task_operations=use_input_rotamer,no_repack_target_far_from_interface,
-            no_design_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,
-            L_hydrophobic_design,D_hydrophobic_design
+            task_operations=use_input_rotamer,no_repack_target_far_from_interface,no_design_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,L_hydrophobic_design,D_hydrophobic_design
         >
             <MoveMap name=fdes_mm >
                 <Jump number=1 setting=0 />
