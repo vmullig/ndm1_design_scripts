@@ -2,7 +2,7 @@
         # This script is used to design NDM1i-3 peptides, which include exotic non-canonical
         # amino acids in the palette of allowed amino acid types.  It was tested with
         # the most recent version of Rosetta available (Git SHA1
-        # cb360c57ed4ba63d45678afba4bf6a39d8dd958d) built with GCC 9.3.0 on Centos Linux 7. 
+        # 83d83e41283ef44a6ae652f9450c57dc680ec32d) built with GCC 9.3.0 on Centos Linux 7. 
         #
         # For full scientific reproducibility, please refer to the legacy script provided
         # in Section 2.2.3.
