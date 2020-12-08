@@ -1,353 +1,353 @@
 <ROSETTASCRIPTS>
-	<SCOREFXNS>
-		<bnv weights="beta_nov15.wts" >
-			<Reweight scoretype=aspartimide_penalty weight=1.0 />
-		</bnv>
-		<bnv_soft weights="beta_nov15_soft.wts">
-			<Reweight scoretype=aspartimide_penalty weight=1.0 />
-			<Reweight scoretype=atom_pair_constraint weight=1.0 />
-			<Reweight scoretype=angle_constraint weight=1.0 />
-			<Reweight scoretype=dihedral_constraint weight=1.0 />
-			<Reweight scoretype=aa_composition weight=1.0 />
-		</bnv_soft>
-		<bnv_cst weights="beta_nov15_cst.wts" >
-			<Reweight scoretype=aspartimide_penalty weight=1.0 />
-		</bnv_cst>
-		<bnv_highhbond_cst weights="beta_nov15_cst.wts" >
-			<Reweight scoretype=aspartimide_penalty weight=1.0 />
-			<Reweight scoretype=hbond_sr_bb weight=10.0 />
-			<Reweight scoretype=hbond_lr_bb weight=10.0 />
-			<Reweight scoretype=hbond_bb_sc weight=5.0 />
-			<Reweight scoretype=hbond_sc weight=3.0 />
-			<Reweight scoretype=fa_elec weight=2.0 />
-		</bnv_highhbond_cst>
-		<bnv_highhbond_aacomp_cst weights="beta_nov15_cst.wts" >
-			<Reweight scoretype=aspartimide_penalty weight=1.0 />
-			<Reweight scoretype=hbond_sr_bb weight=10.0 />
-			<Reweight scoretype=hbond_lr_bb weight=10.0 />
-			<Reweight scoretype=hbond_bb_sc weight=5.0 />
-			<Reweight scoretype=hbond_sc weight=3.0 />
-			<Reweight scoretype=fa_elec weight=2.0 />
-			<Reweight scoretype=aa_composition weight=1.0 />
-		</bnv_highhbond_aacomp_cst>
-	</SCOREFXNS>
-	<RESIDUE_SELECTORS>
-		<Index name=partners_234 resnums=236-240 />
-		<Index name=partners_235 resnums=237-241 />
-		<Index name=partners_236 resnums=234,238-241 />
-		<Index name=partners_237 resnums=234-235,239-241 />
-		<Index name=partners_238 resnums=234-236,240-241 />
-		<Index name=partners_239 resnums=234-237,241 />
-		<Index name=partners_240 resnums=234-238 />
-		<Index name=partners_241 resnums=235-239 />
-		<Index name=select_peptide resnums=234-241 />
-		<Index name=select_stub resnums=237-238 />
-		<Index name=select_stub_dcys resnums=237 />
-		<Not name=select_target selector=select_peptide />
-		<Phi name=select_neg_phi select_positive_phi=false />
-		<Not name=select_pos_phi selector=select_neg_phi />
-		<Index name=select_design_positions resnums=234-236,239-241 />
-		<And name=select_D_positions selectors=select_design_positions,select_pos_phi />
-		<And name=select_L_positions selectors=select_design_positions,select_neg_phi />
-		<Bin name=select_L_alpha bin_params_file="ABBA.bin_params" bin="A" />
-		<Bin name=select_D_alpha bin_params_file="ABBA.bin_params" bin="Aprime" />
-		<Bin name=select_L_beta bin_params_file="ABBA.bin_params" bin="B" />
-		<Bin name=select_D_beta bin_params_file="ABBA.bin_params" bin="Bprime" />
-		<Neighborhood name=select_interface resnums=234-241 distance=8.0 />
-		<Not name=not_interface selector=select_interface />
-		<And name=select_target_far_from_interface selectors=select_interface,select_target />
-		
-		Index name=select_hydrophobic_positions resnums=234,237 />
-		
-		<Layer name=select_core select_core=true select_boundary=false select_surface=false />
-		<And name=select_hydrophobic_positions selectors=select_design_positions,select_core />
-		
-		<Not name=select_nonhydrophobic_positions selector=select_hydrophobic_positions />
-		<And name=select_nonhydrophobic_design_positions selectors=select_nonhydrophobic_positions,select_design_positions />
-		<And name=select_L_hydrophobic_positions selectors=select_hydrophobic_positions,select_L_positions />
-		<And name=select_D_hydrophobic_positions selectors=select_hydrophobic_positions,select_D_positions />
-		<And name=select_L_nonhydrophobic_positions selectors=select_nonhydrophobic_design_positions,select_L_positions />
-		<And name=select_D_nonhydrophobic_positions selectors=select_nonhydrophobic_design_positions,select_D_positions />
-	</RESIDUE_SELECTORS>
-	<TASKOPERATIONS>
-		<IncludeCurrent name=use_input_rotamer />
-		<ExtraRotamersGeneric name=extrarot ex1=1 ex2=1 ex3=0 ex4=0 extrachi_cutoff=5 />
-		<OperateOnResidueSubset name=no_repack_target selector=select_target >
-			<PreventRepackingRLT />
-		</OperateOnResidueSubset>
-		<OperateOnResidueSubset name=no_design_target selector=select_target >
-			<RestrictToRepackingRLT />
-		</OperateOnResidueSubset>
-		<OperateOnResidueSubset name=no_repack_stub_dcys selector=select_stub_dcys >
-			<PreventRepackingRLT />
-		</OperateOnResidueSubset>
-		<OperateOnResidueSubset name=no_design_stub selector=select_stub >
-			<RestrictToRepackingRLT />
-		</OperateOnResidueSubset>
-		<ReadResfile name=D_design filename="inputs/D_resfile.txt" selector=select_D_nonhydrophobic_positions />
-		<ReadResfile name=D_hydrophobic_design filename="inputs/D_resfile_hydrophobic.txt" selector=select_D_hydrophobic_positions />
-		<ReadResfile name=L_design filename="inputs/L_resfile.txt" selector=select_L_nonhydrophobic_positions />
-		<ReadResfile name=L_hydrophobic_design filename="inputs/L_resfile_hydrophobic.txt" selector=select_L_hydrophobic_positions />
-		<OperateOnResidueSubset name=no_repack_target_far_from_interface selector=select_target_far_from_interface >
-			<PreventRepackingRLT />
-		</OperateOnResidueSubset>
-	</TASKOPERATIONS>
-	<FILTERS>
-		<ShapeComplementarity name=shape1 min_sc=0.63 min_interface=150 jump=3 />
-		<ShapeComplementarity name=shape2 min_sc=0.66 min_interface=150 jump=3 />
-		<ShapeComplementarity name=shape3 min_sc=0.66 min_interface=150 jump=3 />
-		<ScoreType name=low_stringency_clash scorefxn=bnv score_type=fa_rep threshold=400 />
-		<OversaturatedHbondAcceptorFilter name=oversat scorefxn=bnv max_allowed_oversaturated=0 consider_mainchain_only=false />
-		<HbondsToResidue name=hbond1 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=234 from_other_chains=false residue_selector=partners_234 />
-		<HbondsToResidue name=hbond2 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=235 from_other_chains=false residue_selector=partners_235 />
-		<HbondsToResidue name=hbond3 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=236 from_other_chains=false residue_selector=partners_236 />
-		<HbondsToResidue name=hbond4 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=237 from_other_chains=false residue_selector=partners_237 />
-		<HbondsToResidue name=hbond5 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=238 from_other_chains=false residue_selector=partners_238 />
-		<HbondsToResidue name=hbond6 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=239 from_other_chains=false residue_selector=partners_239 />
-		<HbondsToResidue name=hbond7 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=240 from_other_chains=false residue_selector=partners_240 />
-		<HbondsToResidue name=hbond8 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=241 from_other_chains=false residue_selector=partners_241 />
-		<CombinedValue name=total_hbonds threshold=-2.9>
-			<Add filter_name=hbond1 factor=-0.5 />
-			<Add filter_name=hbond2 factor=-0.5 />
-			<Add filter_name=hbond3 factor=-0.5 />
-			<Add filter_name=hbond4 factor=-0.5 />
-			<Add filter_name=hbond5 factor=-0.5 />
-			<Add filter_name=hbond6 factor=-0.5 />
-			<Add filter_name=hbond7 factor=-0.5 />
-			<Add filter_name=hbond8 factor=-0.5 />
-		</CombinedValue>
-		<CombinedValue name=total_hbonds_2 threshold=-2.9>
-			<Add filter_name=hbond1 factor=-0.5 />
-			<Add filter_name=hbond2 factor=-0.5 />
-			<Add filter_name=hbond3 factor=-0.5 />
-			<Add filter_name=hbond4 factor=-0.5 />
-			<Add filter_name=hbond5 factor=-0.5 />
-			<Add filter_name=hbond6 factor=-0.5 />
-			<Add filter_name=hbond7 factor=-0.5 />
-			<Add filter_name=hbond8 factor=-0.5 />
-		</CombinedValue>
-		
-		<ScoreType name=mc_score scorefxn=bnv_highhbond_aacomp_cst score_type=total_score threshold=999999 />
-		<CombinedValue name=mc_filter threshold=99999>
-			<Add filter_name=mc_score factor=1.0 />
-			<Add filter_name=shape2 factor=-100.0 />
-		</CombinedValue>
-	</FILTERS>
-	<MOVERS>
+    <SCOREFXNS>
+        <bnv weights="beta_nov15.wts" >
+            <Reweight scoretype=aspartimide_penalty weight=1.0 />
+        </bnv>
+        <bnv_soft weights="beta_nov15_soft.wts">
+            <Reweight scoretype=aspartimide_penalty weight=1.0 />
+            <Reweight scoretype=atom_pair_constraint weight=1.0 />
+            <Reweight scoretype=angle_constraint weight=1.0 />
+            <Reweight scoretype=dihedral_constraint weight=1.0 />
+            <Reweight scoretype=aa_composition weight=1.0 />
+        </bnv_soft>
+        <bnv_cst weights="beta_nov15_cst.wts" >
+            <Reweight scoretype=aspartimide_penalty weight=1.0 />
+        </bnv_cst>
+        <bnv_highhbond_cst weights="beta_nov15_cst.wts" >
+            <Reweight scoretype=aspartimide_penalty weight=1.0 />
+            <Reweight scoretype=hbond_sr_bb weight=10.0 />
+            <Reweight scoretype=hbond_lr_bb weight=10.0 />
+            <Reweight scoretype=hbond_bb_sc weight=5.0 />
+            <Reweight scoretype=hbond_sc weight=3.0 />
+            <Reweight scoretype=fa_elec weight=2.0 />
+        </bnv_highhbond_cst>
+        <bnv_highhbond_aacomp_cst weights="beta_nov15_cst.wts" >
+            <Reweight scoretype=aspartimide_penalty weight=1.0 />
+            <Reweight scoretype=hbond_sr_bb weight=10.0 />
+            <Reweight scoretype=hbond_lr_bb weight=10.0 />
+            <Reweight scoretype=hbond_bb_sc weight=5.0 />
+            <Reweight scoretype=hbond_sc weight=3.0 />
+            <Reweight scoretype=fa_elec weight=2.0 />
+            <Reweight scoretype=aa_composition weight=1.0 />
+        </bnv_highhbond_aacomp_cst>
+    </SCOREFXNS>
+    <RESIDUE_SELECTORS>
+        <Index name=partners_234 resnums=236-240 />
+        <Index name=partners_235 resnums=237-241 />
+        <Index name=partners_236 resnums=234,238-241 />
+        <Index name=partners_237 resnums=234-235,239-241 />
+        <Index name=partners_238 resnums=234-236,240-241 />
+        <Index name=partners_239 resnums=234-237,241 />
+        <Index name=partners_240 resnums=234-238 />
+        <Index name=partners_241 resnums=235-239 />
+        <Index name=select_peptide resnums=234-241 />
+        <Index name=select_stub resnums=237-238 />
+        <Index name=select_stub_dcys resnums=237 />
+        <Not name=select_target selector=select_peptide />
+        <Phi name=select_neg_phi select_positive_phi=false />
+        <Not name=select_pos_phi selector=select_neg_phi />
+        <Index name=select_design_positions resnums=234-236,239-241 />
+        <And name=select_D_positions selectors=select_design_positions,select_pos_phi />
+        <And name=select_L_positions selectors=select_design_positions,select_neg_phi />
+        <Bin name=select_L_alpha bin_params_file="ABBA.bin_params" bin="A" />
+        <Bin name=select_D_alpha bin_params_file="ABBA.bin_params" bin="Aprime" />
+        <Bin name=select_L_beta bin_params_file="ABBA.bin_params" bin="B" />
+        <Bin name=select_D_beta bin_params_file="ABBA.bin_params" bin="Bprime" />
+        <Neighborhood name=select_interface resnums=234-241 distance=8.0 />
+        <Not name=not_interface selector=select_interface />
+        <And name=select_target_far_from_interface selectors=select_interface,select_target />
+        
+        Index name=select_hydrophobic_positions resnums=234,237 />
+        
+        <Layer name=select_core select_core=true select_boundary=false select_surface=false />
+        <And name=select_hydrophobic_positions selectors=select_design_positions,select_core />
+        
+        <Not name=select_nonhydrophobic_positions selector=select_hydrophobic_positions />
+        <And name=select_nonhydrophobic_design_positions selectors=select_nonhydrophobic_positions,select_design_positions />
+        <And name=select_L_hydrophobic_positions selectors=select_hydrophobic_positions,select_L_positions />
+        <And name=select_D_hydrophobic_positions selectors=select_hydrophobic_positions,select_D_positions />
+        <And name=select_L_nonhydrophobic_positions selectors=select_nonhydrophobic_design_positions,select_L_positions />
+        <And name=select_D_nonhydrophobic_positions selectors=select_nonhydrophobic_design_positions,select_D_positions />
+    </RESIDUE_SELECTORS>
+    <TASKOPERATIONS>
+        <IncludeCurrent name=use_input_rotamer />
+        <ExtraRotamersGeneric name=extrarot ex1=1 ex2=1 ex3=0 ex4=0 extrachi_cutoff=5 />
+        <OperateOnResidueSubset name=no_repack_target selector=select_target >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name=no_design_target selector=select_target >
+            <RestrictToRepackingRLT />
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name=no_repack_stub_dcys selector=select_stub_dcys >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name=no_design_stub selector=select_stub >
+            <RestrictToRepackingRLT />
+        </OperateOnResidueSubset>
+        <ReadResfile name=D_design filename="inputs/D_resfile.txt" selector=select_D_nonhydrophobic_positions />
+        <ReadResfile name=D_hydrophobic_design filename="inputs/D_resfile_hydrophobic.txt" selector=select_D_hydrophobic_positions />
+        <ReadResfile name=L_design filename="inputs/L_resfile.txt" selector=select_L_nonhydrophobic_positions />
+        <ReadResfile name=L_hydrophobic_design filename="inputs/L_resfile_hydrophobic.txt" selector=select_L_hydrophobic_positions />
+        <OperateOnResidueSubset name=no_repack_target_far_from_interface selector=select_target_far_from_interface >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+    </TASKOPERATIONS>
+    <FILTERS>
+        <ShapeComplementarity name=shape1 min_sc=0.63 min_interface=150 jump=3 />
+        <ShapeComplementarity name=shape2 min_sc=0.66 min_interface=150 jump=3 />
+        <ShapeComplementarity name=shape3 min_sc=0.66 min_interface=150 jump=3 />
+        <ScoreType name=low_stringency_clash scorefxn=bnv score_type=fa_rep threshold=400 />
+        <OversaturatedHbondAcceptorFilter name=oversat scorefxn=bnv max_allowed_oversaturated=0 consider_mainchain_only=false />
+        <HbondsToResidue name=hbond1 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=234 from_other_chains=false residue_selector=partners_234 />
+        <HbondsToResidue name=hbond2 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=235 from_other_chains=false residue_selector=partners_235 />
+        <HbondsToResidue name=hbond3 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=236 from_other_chains=false residue_selector=partners_236 />
+        <HbondsToResidue name=hbond4 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=237 from_other_chains=false residue_selector=partners_237 />
+        <HbondsToResidue name=hbond5 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=238 from_other_chains=false residue_selector=partners_238 />
+        <HbondsToResidue name=hbond6 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=239 from_other_chains=false residue_selector=partners_239 />
+        <HbondsToResidue name=hbond7 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=240 from_other_chains=false residue_selector=partners_240 />
+        <HbondsToResidue name=hbond8 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true sidechain=false backbone=true residue=241 from_other_chains=false residue_selector=partners_241 />
+        <CombinedValue name=total_hbonds threshold=-2.9>
+            <Add filter_name=hbond1 factor=-0.5 />
+            <Add filter_name=hbond2 factor=-0.5 />
+            <Add filter_name=hbond3 factor=-0.5 />
+            <Add filter_name=hbond4 factor=-0.5 />
+            <Add filter_name=hbond5 factor=-0.5 />
+            <Add filter_name=hbond6 factor=-0.5 />
+            <Add filter_name=hbond7 factor=-0.5 />
+            <Add filter_name=hbond8 factor=-0.5 />
+        </CombinedValue>
+        <CombinedValue name=total_hbonds_2 threshold=-2.9>
+            <Add filter_name=hbond1 factor=-0.5 />
+            <Add filter_name=hbond2 factor=-0.5 />
+            <Add filter_name=hbond3 factor=-0.5 />
+            <Add filter_name=hbond4 factor=-0.5 />
+            <Add filter_name=hbond5 factor=-0.5 />
+            <Add filter_name=hbond6 factor=-0.5 />
+            <Add filter_name=hbond7 factor=-0.5 />
+            <Add filter_name=hbond8 factor=-0.5 />
+        </CombinedValue>
+        
+        <ScoreType name=mc_score scorefxn=bnv_highhbond_aacomp_cst score_type=total_score threshold=999999 />
+        <CombinedValue name=mc_filter threshold=99999>
+            <Add filter_name=mc_score factor=1.0 />
+            <Add filter_name=shape2 factor=-100.0 />
+        </CombinedValue>
+    </FILTERS>
+    <MOVERS>
 
-		<AtomTree name=foldtree1 fold_tree_file="inputs/foldtree1.txt" />
+        <AtomTree name=foldtree1 fold_tree_file="inputs/foldtree1.txt" />
 
-		<SetTorsion name=initialize_tors>
-			<Torsion residue=234 torsion_name=omega angle=180.0 />
-			<Torsion residue=235 torsion_name=omega angle=180.0 />
-			<Torsion residue=236 torsion_name=omega angle=180.0 />
-			<Torsion residue=237 torsion_name=phi   angle=60.0 />
-			<Torsion residue=237 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=30.0 />
-			<Torsion residue=237 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
-			<Torsion residue=237 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
-			<Torsion residue=238 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
-			<Torsion residue=238 torsion_name=psi   angle=-10.0 />
-			<Torsion residue=238 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=30.0 />
-			<Torsion residue=238 torsion_name=omega angle=180.0 />
-			<Torsion residue=239 torsion_name=omega angle=180.0 />
-			<Torsion residue=240 torsion_name=omega angle=180.0 />
-		</SetTorsion>
+        <SetTorsion name=initialize_tors>
+            <Torsion residue=234 torsion_name=omega angle=180.0 />
+            <Torsion residue=235 torsion_name=omega angle=180.0 />
+            <Torsion residue=236 torsion_name=omega angle=180.0 />
+            <Torsion residue=237 torsion_name=phi   angle=60.0 />
+            <Torsion residue=237 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=30.0 />
+            <Torsion residue=237 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
+            <Torsion residue=237 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
+            <Torsion residue=238 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
+            <Torsion residue=238 torsion_name=psi   angle=-10.0 />
+            <Torsion residue=238 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=30.0 />
+            <Torsion residue=238 torsion_name=omega angle=180.0 />
+            <Torsion residue=239 torsion_name=omega angle=180.0 />
+            <Torsion residue=240 torsion_name=omega angle=180.0 />
+        </SetTorsion>
 
-		<SetTorsion name=perturb_tors>
-			<Torsion residue=237 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
-			<Torsion residue=237 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
-			<Torsion residue=237 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
-			<Torsion residue=238 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
-			<Torsion residue=238 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
-			<Torsion residue=238 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
-		</SetTorsion>
+        <SetTorsion name=perturb_tors>
+            <Torsion residue=237 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
+            <Torsion residue=237 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
+            <Torsion residue=237 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
+            <Torsion residue=238 torsion_name=phi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
+            <Torsion residue=238 torsion_name=psi   angle="perturb" perturbation_type=gaussian perturbation_magnitude=5.0 />
+            <Torsion residue=238 torsion_name=omega angle="perturb" perturbation_type=gaussian perturbation_magnitude=1.0 />
+        </SetTorsion>
 
-		<DeclareBond name=connect_termini atom1=N res1=234 atom2=C res2=241 add_termini=true />
+        <DeclareBond name=connect_termini atom1=N res1=234 atom2=C res2=241 add_termini=true />
 
-		<ConstraintSetMover name=terminal_csts add_constraints=true cst_file="inputs/termini.cst" />
+        <ConstraintSetMover name=terminal_csts add_constraints=true cst_file="inputs/termini.cst" />
 
-		<AddCompositionConstraintMover name=global_comp filename="comp/global_preferences.comp" selector="select_design_positions" />
-		<AddCompositionConstraintMover name=L_alpha_comp filename="comp/L_alpha_preferences.comp" selector="select_L_alpha" />
-		<AddCompositionConstraintMover name=D_alpha_comp filename="comp/D_alpha_preferences.comp" selector="select_D_alpha" />
-		<AddCompositionConstraintMover name=L_beta_comp filename="comp/L_beta_preferences.comp" selector="select_L_beta" />
-		<AddCompositionConstraintMover name=D_beta_comp filename="comp/D_beta_preferences.comp" selector="select_D_beta" />
-		<PackRotamersMover name=softdesign scorefxn=bnv_soft task_operations=use_input_rotamer,no_design_target,no_repack_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,D_hydrophobic_design,L_hydrophobic_design />
+        <AddCompositionConstraintMover name=global_comp filename="comp/global_preferences.comp" selector="select_design_positions" />
+        <AddCompositionConstraintMover name=L_alpha_comp filename="comp/L_alpha_preferences.comp" selector="select_L_alpha" />
+        <AddCompositionConstraintMover name=D_alpha_comp filename="comp/D_alpha_preferences.comp" selector="select_D_alpha" />
+        <AddCompositionConstraintMover name=L_beta_comp filename="comp/L_beta_preferences.comp" selector="select_L_beta" />
+        <AddCompositionConstraintMover name=D_beta_comp filename="comp/D_beta_preferences.comp" selector="select_D_beta" />
+        <PackRotamersMover name=softdesign scorefxn=bnv_soft task_operations=use_input_rotamer,no_design_target,no_repack_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,D_hydrophobic_design,L_hydrophobic_design />
 
-		<MinMover name=min1 scorefxn=bnv_cst type=dfpmin tolerance=0.001 bb=0 chi=0 >
-			<MoveMap name=min1_mm >
-				<Jump number=1 setting=0 />
-				<Jump number=2 setting=0 />
-				<Jump number=3 setting=0 />
-				<Jump number=4 setting=0 />
-				<Jump number=5 setting=0 />
-				<Jump number=6 setting=0 />
-				<Jump number=7 setting=0 />
-				<Jump number=8 setting=0 />
-				<Jump number=9 setting=0 />
-				<Span begin=1 end=999 chi=0 bb=0 />
-				<Span begin=234 end=241 chi=1 bb=0 />
-			</MoveMap>
-		</MinMover>
+        <MinMover name=min1 scorefxn=bnv_cst type=dfpmin tolerance=0.001 bb=0 chi=0 >
+            <MoveMap name=min1_mm >
+                <Jump number=1 setting=0 />
+                <Jump number=2 setting=0 />
+                <Jump number=3 setting=0 />
+                <Jump number=4 setting=0 />
+                <Jump number=5 setting=0 />
+                <Jump number=6 setting=0 />
+                <Jump number=7 setting=0 />
+                <Jump number=8 setting=0 />
+                <Jump number=9 setting=0 />
+                <Span begin=1 end=999 chi=0 bb=0 />
+                <Span begin=234 end=241 chi=1 bb=0 />
+            </MoveMap>
+        </MinMover>
 
-		<MinMover name=min2 scorefxn=bnv_cst type=dfpmin tolerance=0.001 bb=0 chi=0>
-			<MoveMap name=min2_mm >
-				<Jump number=1 setting=0 />
-				<Jump number=2 setting=0 />
-				<Jump number=3 setting=0 />
-				<Jump number=4 setting=0 />
-				<Jump number=5 setting=0 />
-				<Jump number=6 setting=0 />
-				<Jump number=7 setting=0 />
-				<Jump number=8 setting=0 />
-				<Jump number=9 setting=0 />
-				<Span begin=1 end=999 chi=0 bb=0 />
-				<Span begin=234 end=241 chi=1 bb=1 />
-			</MoveMap>
-		</MinMover>
+        <MinMover name=min2 scorefxn=bnv_cst type=dfpmin tolerance=0.001 bb=0 chi=0>
+            <MoveMap name=min2_mm >
+                <Jump number=1 setting=0 />
+                <Jump number=2 setting=0 />
+                <Jump number=3 setting=0 />
+                <Jump number=4 setting=0 />
+                <Jump number=5 setting=0 />
+                <Jump number=6 setting=0 />
+                <Jump number=7 setting=0 />
+                <Jump number=8 setting=0 />
+                <Jump number=9 setting=0 />
+                <Span begin=1 end=999 chi=0 bb=0 />
+                <Span begin=234 end=241 chi=1 bb=1 />
+            </MoveMap>
+        </MinMover>
 
-		<FastDesign name=fdes repeats=3 scorefxn=bnv_highhbond_aacomp_cst min_type=dfpmin task_operations=use_input_rotamer,no_repack_target_far_from_interface,no_design_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,L_hydrophobic_design,D_hydrophobic_design >
-			<MoveMap name=fdes_mm >
-				<Jump number=1 setting=0 />
-				<Jump number=2 setting=0 />
-				<Jump number=3 setting=0 />
-				<Jump number=4 setting=0 />
-				<Jump number=5 setting=0 />
-				<Jump number=6 setting=0 />
-				<Jump number=7 setting=0 />
-				<Jump number=8 setting=0 />
-				<Jump number=9 setting=0 />
-				<Span begin=1 end=999 chi=1 bb=0 />
-				<Span begin=234 end=241 chi=1 bb=1 />
-			</MoveMap>
-		</FastDesign>
+        <FastDesign name=fdes repeats=3 scorefxn=bnv_highhbond_aacomp_cst min_type=dfpmin task_operations=use_input_rotamer,no_repack_target_far_from_interface,no_design_target,no_design_stub,no_repack_stub_dcys,D_design,L_design,L_hydrophobic_design,D_hydrophobic_design >
+            <MoveMap name=fdes_mm >
+                <Jump number=1 setting=0 />
+                <Jump number=2 setting=0 />
+                <Jump number=3 setting=0 />
+                <Jump number=4 setting=0 />
+                <Jump number=5 setting=0 />
+                <Jump number=6 setting=0 />
+                <Jump number=7 setting=0 />
+                <Jump number=8 setting=0 />
+                <Jump number=9 setting=0 />
+                <Span begin=1 end=999 chi=1 bb=0 />
+                <Span begin=234 end=241 chi=1 bb=1 />
+            </MoveMap>
+        </FastDesign>
 
-		<ParsedProtocol name=genkic_steps>
-			<Add filter=oversat />
-			<Add filter=total_hbonds />
-			<Add filter=low_stringency_clash />
-			<Add mover=softdesign />
-			<Add mover=min1 />
-			<Add mover=connect_termini />
-			<Add filter=oversat />
-			<Add mover=min2 />
-			<Add mover=connect_termini />
-			<Add filter=oversat />
-			<Add filter=total_hbonds_2 />
-			<Add filter=shape1 />
-			<Add mover=fdes />
-			<Add mover=connect_termini />
-			<Add filter=oversat />
-			<Add filter=shape2 />
-		</ParsedProtocol>
+        <ParsedProtocol name=genkic_steps>
+            <Add filter=oversat />
+            <Add filter=total_hbonds />
+            <Add filter=low_stringency_clash />
+            <Add mover=softdesign />
+            <Add mover=min1 />
+            <Add mover=connect_termini />
+            <Add filter=oversat />
+            <Add mover=min2 />
+            <Add mover=connect_termini />
+            <Add filter=oversat />
+            <Add filter=total_hbonds_2 />
+            <Add filter=shape1 />
+            <Add mover=fdes />
+            <Add mover=connect_termini />
+            <Add filter=oversat />
+            <Add filter=shape2 />
+        </ParsedProtocol>
 
-		<GeneralizedKIC name=genkic closure_attempts=100 pre_selection_mover="genkic_steps" stop_when_n_solutions_found=1 selector="lowest_energy_selector" selector_scorefunction="bnv_highhbond_cst" >
-			<AddResidue res_index=239 />
-			<AddResidue res_index=240 />
-			<AddResidue res_index=241 />
-			<AddResidue res_index=234 />
-			<AddResidue res_index=235 />
-			<AddResidue res_index=236 />
-			<SetPivots res1=239 res2=234 res3=236 atom1="CA" atom2="CA" atom3="CA" />
-			<CloseBond atom1="C" res1=241 atom2="N" res2=234 torsion=180 bondlength=1.328685 angle1=116.2 angle2=121.7 />
-			<AddPerturber effect="randomize_alpha_backbone_by_rama" >
-				<AddResidue index=234 />
-				<AddResidue index=235 />
-				<AddResidue index=236 />
-				<AddResidue index=239 />
-				<AddResidue index=240 />
-				<AddResidue index=241 />
-			</AddPerturber>
-		</GeneralizedKIC>
-		
-		<ParsedProtocol name=genkic_perturb_steps>
-			<Add mover=connect_termini />
-			<Add filter=oversat />
-			<Add filter=total_hbonds_2 />
-		</ParsedProtocol>
-	
-		<GeneralizedKIC name=genkic_perturb closure_attempts=5 pre_selection_mover="genkic_perturb_steps" stop_when_n_solutions_found=1 selector="lowest_rmsd_selector" selector_scorefunction="bnv_highhbond_cst" >
-			<AddResidue res_index=239 />
-			<AddResidue res_index=240 />
-			<AddResidue res_index=241 />
-			<AddResidue res_index=234 />
-			<AddResidue res_index=235 />
-			<AddResidue res_index=236 />
-			<SetPivots res1=239 res2=234 res3=236 atom1="CA" atom2="CA" atom3="CA" />
-			<CloseBond atom1="C" res1=241 atom2="N" res2=234 torsion=180 bondlength=1.328685 angle1=116.2 angle2=121.7 />
-			<AddPerturber effect="perturb_dihedral" >
-				<AddAtoms res1=239 atom1="N"  res2=239 atom2="CA" />
-				<AddAtoms res1=239 atom1="CA" res2=239 atom2="C"  />
-				<AddAtoms res1=240 atom1="N"  res2=240 atom2="CA" />
-				<AddAtoms res1=240 atom1="CA" res2=240 atom2="C"  />
-				<AddAtoms res1=241 atom1="N"  res2=241 atom2="CA" />
-				<AddAtoms res1=241 atom1="CA" res2=241 atom2="C"  />
-				<AddAtoms res1=234 atom1="N"  res2=234 atom2="CA" />
-				<AddAtoms res1=234 atom1="CA" res2=234 atom2="C"  />
-				<AddAtoms res1=235 atom1="N"  res2=235 atom2="CA" />
-				<AddAtoms res1=235 atom1="CA" res2=235 atom2="C"  />
-				<AddAtoms res1=236 atom1="N"  res2=236 atom2="CA" />
-				<AddAtoms res1=236 atom1="CA" res2=236 atom2="C"  />
-				<AddValue value=2.5 />
-			</AddPerturber>
-		</GeneralizedKIC>
+        <GeneralizedKIC name=genkic closure_attempts=100 pre_selection_mover="genkic_steps" stop_when_n_solutions_found=1 selector="lowest_energy_selector" selector_scorefunction="bnv_highhbond_cst" >
+            <AddResidue res_index=239 />
+            <AddResidue res_index=240 />
+            <AddResidue res_index=241 />
+            <AddResidue res_index=234 />
+            <AddResidue res_index=235 />
+            <AddResidue res_index=236 />
+            <SetPivots res1=239 res2=234 res3=236 atom1="CA" atom2="CA" atom3="CA" />
+            <CloseBond atom1="C" res1=241 atom2="N" res2=234 torsion=180 bondlength=1.328685 angle1=116.2 angle2=121.7 />
+            <AddPerturber effect="randomize_alpha_backbone_by_rama" >
+                <AddResidue index=234 />
+                <AddResidue index=235 />
+                <AddResidue index=236 />
+                <AddResidue index=239 />
+                <AddResidue index=240 />
+                <AddResidue index=241 />
+            </AddPerturber>
+        </GeneralizedKIC>
+        
+        <ParsedProtocol name=genkic_perturb_steps>
+            <Add mover=connect_termini />
+            <Add filter=oversat />
+            <Add filter=total_hbonds_2 />
+        </ParsedProtocol>
+    
+        <GeneralizedKIC name=genkic_perturb closure_attempts=5 pre_selection_mover="genkic_perturb_steps" stop_when_n_solutions_found=1 selector="lowest_rmsd_selector" selector_scorefunction="bnv_highhbond_cst" >
+            <AddResidue res_index=239 />
+            <AddResidue res_index=240 />
+            <AddResidue res_index=241 />
+            <AddResidue res_index=234 />
+            <AddResidue res_index=235 />
+            <AddResidue res_index=236 />
+            <SetPivots res1=239 res2=234 res3=236 atom1="CA" atom2="CA" atom3="CA" />
+            <CloseBond atom1="C" res1=241 atom2="N" res2=234 torsion=180 bondlength=1.328685 angle1=116.2 angle2=121.7 />
+            <AddPerturber effect="perturb_dihedral" >
+                <AddAtoms res1=239 atom1="N"  res2=239 atom2="CA" />
+                <AddAtoms res1=239 atom1="CA" res2=239 atom2="C"  />
+                <AddAtoms res1=240 atom1="N"  res2=240 atom2="CA" />
+                <AddAtoms res1=240 atom1="CA" res2=240 atom2="C"  />
+                <AddAtoms res1=241 atom1="N"  res2=241 atom2="CA" />
+                <AddAtoms res1=241 atom1="CA" res2=241 atom2="C"  />
+                <AddAtoms res1=234 atom1="N"  res2=234 atom2="CA" />
+                <AddAtoms res1=234 atom1="CA" res2=234 atom2="C"  />
+                <AddAtoms res1=235 atom1="N"  res2=235 atom2="CA" />
+                <AddAtoms res1=235 atom1="CA" res2=235 atom2="C"  />
+                <AddAtoms res1=236 atom1="N"  res2=236 atom2="CA" />
+                <AddAtoms res1=236 atom1="CA" res2=236 atom2="C"  />
+                <AddValue value=2.5 />
+            </AddPerturber>
+        </GeneralizedKIC>
 
-		<PDBTrajectoryRecorder name="record_traj" stride=1 filename="traj.pdb" cumulate_jobs=0 cumulate_replicas=0 />
-		<PDBTrajectoryRecorder name="record_traj_accepted" stride=1 filename="accepted.pdb" cumulate_jobs=0 cumulate_replicas=0 />
-		
-		<ParsedProtocol name=mc_steps>
-			Add mover=record_traj_accepted /> #COMMENT OUT FOR PRODUCTION RUN
-			<Add mover=perturb_tors />
-			<Add mover=genkic_perturb />
-			<Add mover=softdesign />
-			<Add mover=min1 />
-			<Add mover=connect_termini />
-			Add mover=record_traj /> #COMMENT OUT FOR PRODUCTION RUN
-			<Add filter=oversat />
-			<Add mover=min2 />
-			<Add mover=connect_termini />
-			<Add filter=oversat />
-			<Add filter=total_hbonds_2 />
-		</ParsedProtocol>
-				
-		<GenericMonteCarlo name=mc_search mover_name=mc_steps filter_name=mc_filter trials=500 temperature=0.5 />
-		
-		<FastRelax name=final_frlx repeats=3 scorefxn=bnv_cst min_type=dfpmin task_operations=use_input_rotamer,no_repack_target_far_from_interface >
-			<MoveMap name=final_frlx_mm >
-				<Jump number=1 setting=0 />
-				<Jump number=2 setting=0 />
-				<Jump number=3 setting=0 />
-				<Jump number=4 setting=0 />
-				<Jump number=5 setting=0 />
-				<Jump number=6 setting=0 />
-				<Jump number=7 setting=0 />
-				<Jump number=8 setting=0 />
-				<Jump number=9 setting=0 />
-				<Span begin=1 end=999 chi=1 bb=0 />
-				<Span begin=234 end=241 chi=1 bb=1 />
-			</MoveMap>
-		</FastRelax>
+        <PDBTrajectoryRecorder name="record_traj" stride=1 filename="traj.pdb" cumulate_jobs=0 cumulate_replicas=0 />
+        <PDBTrajectoryRecorder name="record_traj_accepted" stride=1 filename="accepted.pdb" cumulate_jobs=0 cumulate_replicas=0 />
+        
+        <ParsedProtocol name=mc_steps>
+            Add mover=record_traj_accepted /> #COMMENT OUT FOR PRODUCTION RUN
+            <Add mover=perturb_tors />
+            <Add mover=genkic_perturb />
+            <Add mover=softdesign />
+            <Add mover=min1 />
+            <Add mover=connect_termini />
+            Add mover=record_traj /> #COMMENT OUT FOR PRODUCTION RUN
+            <Add filter=oversat />
+            <Add mover=min2 />
+            <Add mover=connect_termini />
+            <Add filter=oversat />
+            <Add filter=total_hbonds_2 />
+        </ParsedProtocol>
+                
+        <GenericMonteCarlo name=mc_search mover_name=mc_steps filter_name=mc_filter trials=500 temperature=0.5 />
+        
+        <FastRelax name=final_frlx repeats=3 scorefxn=bnv_cst min_type=dfpmin task_operations=use_input_rotamer,no_repack_target_far_from_interface >
+            <MoveMap name=final_frlx_mm >
+                <Jump number=1 setting=0 />
+                <Jump number=2 setting=0 />
+                <Jump number=3 setting=0 />
+                <Jump number=4 setting=0 />
+                <Jump number=5 setting=0 />
+                <Jump number=6 setting=0 />
+                <Jump number=7 setting=0 />
+                <Jump number=8 setting=0 />
+                <Jump number=9 setting=0 />
+                <Span begin=1 end=999 chi=1 bb=0 />
+                <Span begin=234 end=241 chi=1 bb=1 />
+            </MoveMap>
+        </FastRelax>
 
-	</MOVERS>
-	<APPLY_TO_POSE>
-	</APPLY_TO_POSE>
-	<PROTOCOLS>
-		<Add mover=foldtree1 />
-		<Add mover=initialize_tors />
-		<Add mover=connect_termini />
-		<Add mover=terminal_csts />
-		<Add mover=global_comp />
-		<Add mover=L_alpha_comp />
-		<Add mover=D_alpha_comp />
-		<Add mover=L_beta_comp />
-		<Add mover=D_beta_comp />
-		<Add mover=genkic />
-		<Add mover=mc_search />
-		<Add mover=fdes />
-		<Add mover=final_frlx />
-		<Add mover=connect_termini />
-		<Add filter=oversat />
-		<Add filter=shape3 />
-	</PROTOCOLS>
-	<OUTPUT scorefxn=bnv />
-	OUTPUT scorefxn=bnv_highhbond_cst />
+    </MOVERS>
+    <APPLY_TO_POSE>
+    </APPLY_TO_POSE>
+    <PROTOCOLS>
+        <Add mover=foldtree1 />
+        <Add mover=initialize_tors />
+        <Add mover=connect_termini />
+        <Add mover=terminal_csts />
+        <Add mover=global_comp />
+        <Add mover=L_alpha_comp />
+        <Add mover=D_alpha_comp />
+        <Add mover=L_beta_comp />
+        <Add mover=D_beta_comp />
+        <Add mover=genkic />
+        <Add mover=mc_search />
+        <Add mover=fdes />
+        <Add mover=final_frlx />
+        <Add mover=connect_termini />
+        <Add filter=oversat />
+        <Add filter=shape3 />
+    </PROTOCOLS>
+    <OUTPUT scorefxn=bnv />
+    OUTPUT scorefxn=bnv_highhbond_cst />
 </ROSETTASCRIPTS>
