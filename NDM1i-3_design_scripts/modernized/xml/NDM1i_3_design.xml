@@ -277,7 +277,7 @@
         # Manually introduce the proline->hydroxyproline mutation at position 7.  This
         # position in the crystal structure has the potential to make a favourable
         # hydrogen bonding interaction with the target.
-        <MutateResidue name="add_hyp" target="241" new_res="PRO:pro_hydroxylated_case1" />
+        <MutateResidue name="add_hyp" target="241" new_res="HYP" />
  
         # Add cutpoint variants in the hinge loop and in the peptide macrocycle:
         <ModifyVariantType name="upper_cutpoints" add_type="CUTPOINT_UPPER"
