@@ -1,0 +1,19 @@
+-nstruct 1000
+#-qsar:grid_dir grid_dir/
+#-qsar:max_grid_cache_size 0
+-linmem_ig 32
+-load_PDB_components false
+-auto_setup_metals
+#-metals_detection_LJ_multiplier 1.5
+-jd2:delete_old_poses true
+-output_virtual true
+-jd2:failed_job_exception false
+-symmetric_gly_tables true
+-in:file:s inputs/NDM-1_P2_model_alt_conformation_trimmed.pdb
+-in:file:fullatom
+-write_all_connect_info
+-parser:protocol xml/round5design2.xml
+-ignore_waters false
+#-mute all
+#-unmute core.pack.pack_rotamers protocols.jd2 protocols.rosetta_scripts protocols.denovo_design.movers.FastDesign protocols.relax.FastRelax protocols.simple_filters.DdgFilter
+#-out:file:silent out.silent
