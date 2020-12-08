@@ -173,10 +173,8 @@
         # The CustomBaseTypePackerPalette defines the canonical amino acids as types that will
         # be used by default, and allows the user to add additional types.  We will add the D-
         # amino acid mirror images of the canonical amino acids.
-        # (Note that the additional_residue_types line must be on a single line.)
         <CustomBaseTypePackerPalette name="design_palette"
-            additional_residue_types="DALA,DASP,DGLU,DHIS,DILE,DLYS,DLEU,DMET,DASN,
-            DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR"
+            additional_residue_types="DALA,DASP,DGLU,DHIS,DILE,DLYS,DLEU,DMET,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR"
         />
     </PACKER_PALETTES>
  
@@ -405,13 +403,10 @@
  
         # The PackRotamersMover optimizes side chain rotamers, permitting structure
         # refinement or design.  Here, it is used to design the peptide and to refine
-        # side chain conformations on the target.  Note that the task_operations line must
-        # be on a single line:
+        # side chain conformations on the target.
         <PackRotamersMover name="softdesign" scorefxn="r15_soft"
             packer_palette="design_palette"
-            task_operations="use_input_rotamer,no_design_target,no_repack_target,
-            no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,
-            D_hydrophobic_design,L_hydrophobic_design"
+            task_operations="use_input_rotamer,no_design_target,no_repack_target,no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,D_hydrophobic_design,L_hydrophobic_design"
         />
  
         # The MinMover relaxes a structure through gradient-descent minimization.  This one
@@ -460,12 +455,10 @@
         # repulsive term in the scoring function from an initial low value.  This FastDesign
         # instance is configured to design the peptide and repack the target interface, and to
         # allow peptide side chains and backbone and target side chains to move during energy
-        # minimization.  Note that the task_operations line must be on a single line:
+        # minimization.
         <FastDesign name="fdes" repeats="3" scorefxn="r15_highhbond_aacomp_cst" 
             min_type="dfpmin" packer_palette="design_palette"
-            task_operations="use_input_rotamer,no_repack_target_far_from_interface,
-            no_design_target,no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,
-            L_hydrophobic_design,D_hydrophobic_design"
+            task_operations="use_input_rotamer,no_repack_target_far_from_interface,no_design_target,no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,L_hydrophobic_design,D_hydrophobic_design"
         >
             <MoveMap name="fdes_mm" >
                 <Jump number="1" setting="0" />
