@@ -143,11 +143,9 @@
     # can then prune allowed types away in on a position-specific basis:
     <PACKER_PALETTES>
        # This packer palette activates a set of non-canonical amino acids with exotic
-       # side chains.  Note that the additional_residue_types line must be on a single line:
+       # side chains:
     <CustomBaseTypePackerPalette name="design_palette"
-            additional_residue_types="AIB,A12,A91,NLU,NVL,A34,A68,A94,B30,B96,C27,B44,ORN,DPP,
-            B67,B74,DA12,DA91,DNLU,DNVL,DA34,DA68,DA94,DB30,DB96,DC27,DB44,DB67,DB74,DORN,
-            DDPP,DAB,DDAB"
+            additional_residue_types="AIB,A12,A91,NLU,NVL,A34,A68,A94,B30,B96,C27,B44,ORN,DPP,B67,B74,DA12,DA91,DNLU,DNVL,DA34,DA68,DA94,DB30,DB96,DC27,DB44,DB67,DB74,DORN,DDPP,DAB,DDAB"
         />
     </PACKER_PALETTES>
  
@@ -312,12 +310,10 @@
         <AddCompositionConstraintMover name="peptide_exposed_aa_composition"
             filename="inputs/peptide_surf.comp" selector="select_not_buried_and_peptide" />
  
-        # Carry out a round of design with energy-minimization.  Note that the
-        # task_operations must be listed on a single line:
+        # Carry out a round of design with energy-minimization:
         <FastDesign name="fdes1" repeats="1" scorefxn="r15_cst_voids"
             movemap_factory="frlx_mm_factory" packer_palette="design_palette"
-            task_operations="resfile_positive_phi,resfile_negative_phi,
-            only_repack_very_near_peptide,only_design_peptide"
+            task_operations="resfile_positive_phi,resfile_negative_phi,only_repack_very_near_peptide,only_design_peptide"
         />
         
         # Final relaxation (packing and energy-minimization), keeping amino acid
