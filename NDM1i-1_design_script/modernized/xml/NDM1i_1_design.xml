@@ -1,10 +1,11 @@
 <ROSETTASCRIPTS>
-        # This script takes as input the 4EXS structure with an 8-residue peptide in the
-        # active site, in an open conformation.  It uses generalized kinematic closure to
-        # close the peptide, forming an N-to-C peptide macrocycle.  It then designs the
-        # sequence of the peptide, and applies various filters.  If filters pass, it proceeds
-        # to carry out a Monte Carlo search of local conformation space, designing at each
-        # step, to try to improve the shape complementarity.
+        # This script takes as input the 4EXS structure with a 2-residue peptide in the
+        # active site and extends it to generate an 8-residue peptide, in an open
+        # conformation.  It uses generalized kinematic closure to close the peptide, forming
+        # an N-to-C peptide macrocycle.  It then designs the sequence of the peptide, and
+        # applies various filters.  If filters pass, it proceeds to carry out a Monte Carlo
+        # search of local conformation space, designing at each step, to try to improve the
+        # shape complementarity.
         # 
         # This script was updated for the Rosetta version that was current as of 20 May 2020
         # (Git SHA1 cb360c57ed4ba63d45678afba4bf6a39d8dd958d).  Weekly releases after this
