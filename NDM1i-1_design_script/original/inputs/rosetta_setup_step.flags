@@ -1,0 +1,8 @@
+-parser:protocol xml/design_8res_setup.xml
+-beta_nov15
+-in:file:s inputs/4EXS_Dcys_Lpro.pdb
+-in:file:fullatom
+-auto_setup_metals
+-metals_distance_constraint_multiplier 5.0
+-metals_angle_constraint_multiplier 5.0
+-symmetric_gly_tables true
