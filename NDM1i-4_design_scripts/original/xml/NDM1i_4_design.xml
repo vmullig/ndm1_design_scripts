@@ -105,12 +105,9 @@
     # Packer palettes define the set of amino acids with which we will be designing by
     # default.  Task operations can prune this list in a position-specific manner:
     <PACKER_PALETTES>
-        # Activate various non-canonical amino acids.  Note that the amino acids must be
-        # listed on a single line:
+        # Activate various non-canonical amino acids:
         <CustomBaseTypePackerPalette name="packer_palette"
-            additional_residue_types="DALA,DASP,DGLU,DPHE,DHIS,DILE,DLYS,DLEU,DASN,DPRO,DGLN,
-            DARG,DSER,DTHR,DVAL,DTRP,DTYR,NLU,NVL,DNLU,DNVL,ORN,DAB,DPP,DORN,DDAB,DDPP,AIB,
-            B12,DB12,B96,DB96,BB8,DBB8,A43,DA43,A78,DA78,A80,DA80,B36,DB36"
+            additional_residue_types="DALA,DASP,DGLU,DPHE,DHIS,DILE,DLYS,DLEU,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR,NLU,NVL,DNLU,DNVL,ORN,DAB,DPP,DORN,DDAB,DDPP,AIB,B12,DB12,B96,DB96,BB8,DBB8,A43,DA43,A78,DA78,A80,DA80,B36,DB36"
         />
     </PACKER_PALETTES>
  
@@ -183,12 +180,11 @@
     # We include an additional MOVERS block here to define a mover that will be used by the
     # Ddg filter:
     <MOVERS>
-        # A FastRelax mover for the Ddg filter.  Note that the task operations must be listed
-        # on a single line:
+        # A FastRelax mover for the Ddg filter:
         <FastRelax name="frelax_for_filter" repeats="3" scorefxn="r15_relax"
             movemap_factory="mm_factory"
-            task_operations="extrarot2,restrict_to_repacking,
-            only_pack_near_pep" relaxscript="MonomerRelax2019"
+            task_operations="extrarot2,restrict_to_repacking,only_pack_near_pep"
+            relaxscript="MonomerRelax2019"
         />
     </MOVERS>
  
@@ -345,23 +341,19 @@
         />
  
         # A first round of design, with strong penalties for buried unsatisfied
-        # hydrogen bond donors and acceptors or buried voids.  Note that the task_operations
-        # must be listed on a single line:
+        # hydrogen bond donors and acceptors or buried voids:
         <FastDesign name="fdes1" packer_palette="packer_palette" repeats="3"
             relaxscript="InterfaceDesign2019" scorefxn="r15_design"
-            task_operations="init_from_commandline,extrarot,
-            no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,
-            only_pack_near_pep,only_design_pep" movemap_factory="mm_factory"
+            task_operations="init_from_commandline,extrarot,no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,only_pack_near_pep,only_design_pep"
+            movemap_factory="mm_factory"
         />
  
         # A second round of design, with slightly weaker penalties for buried unsatisfied
-        # hydrogen bond donors and acceptors or buried voids.  Note that the task_operations
-        # must be listed on a single line:
+        # hydrogen bond donors and acceptors or buried voids:
         <FastDesign name="fdes2" packer_palette="packer_palette" repeats="3"
             relaxscript="InterfaceDesign2019" scorefxn="r15_design2"
-            task_operations="init_from_commandline,extrarot,
-            no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,
-            only_pack_near_pep,only_design_pep" movemap_factory="mm_factory"
+            task_operations="init_from_commandline,extrarot,no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,only_pack_near_pep,only_design_pep"
+            movemap_factory="mm_factory"
         />
  
         # Store the amino acid sequence at the end for output in the PDB file:
