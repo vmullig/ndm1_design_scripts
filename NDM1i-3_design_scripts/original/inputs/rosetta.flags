@@ -1,0 +1,8 @@
+-nstruct 1000
+-parser:protocol xml/design_8res.xml
+-in:file:s inputs/Moriarty_xtal_chainB_pep_opened.pdb
+-in:file:fullatom
+-write_all_connect_info
+-symmetric_gly_tables true
+-jd2:failed_job_exception false
+-jd2:delete_old_poses true
