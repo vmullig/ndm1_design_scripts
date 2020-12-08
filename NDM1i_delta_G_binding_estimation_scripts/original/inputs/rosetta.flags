@@ -1,0 +1,21 @@
+# For each structure, carry out 20 replicates:
+-nstruct 20
+ 
+# A list of input files:
+-in:file:l inputs/pdbs.list
+ 
+# Input files will be treated as full-atom representations, not centroid representations.
+-in:file:fullatom
+ 
+# The XML file to run:
+-parser:protocol xml/ddgscript.xml
+ 
+# Automatically set up bonds to metal atoms:
+-auto_setup_metals
+ 
+# Write virtual atoms in the output file.  This is useful for debugging:
+-output_virtual
+ 
+# The following line should be uncommented for production runs, to prevent writing of a large
+# output log:
+#-mute all
