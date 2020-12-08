@@ -1,0 +1,14 @@
+-nstruct 1000
+-metals_distance_constraint_multiplier 5.0
+-metals_angle_constraint_multiplier 5.0
+#-mute protocols.protein_interface_design.design_utils protocols.rosetta_scripts.ParsedProtocol
+-in:file:s inputs/4EXS_Dcys_Lpro_start.pdb
+-symmetric_gly_tables true
+-auto_setup_metals
+-in:file:fullatom
+-write_all_connect_info
+-parser:protocol xml/design_8res_2.xml
+-beta_nov15
+-jd2:failed_job_exception false
+#-mute all
+#-unmute core.pack.pack_rotamers core.pack.interaction_graph.interaction_graph_factory

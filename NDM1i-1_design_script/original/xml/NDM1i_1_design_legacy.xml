@@ -377,15 +377,15 @@
         # space, and to positive-phi positions in the right-handed beta-sheet region of
         # Ramachandran space, respectively:
         <AddCompositionConstraintMover name=global_comp
-            filename="comp/global_preferences.comp" selector="select_design_positions" />
+            filename="inputs/global_preferences.comp" selector="select_design_positions" />
         <AddCompositionConstraintMover name=L_alpha_comp
-            filename="comp/L_alpha_preferences.comp" selector="select_L_alpha" />
+            filename="inputs/L_alpha_preferences.comp" selector="select_L_alpha" />
         <AddCompositionConstraintMover name=D_alpha_comp
-            filename="comp/D_alpha_preferences.comp" selector="select_D_alpha" />
+            filename="inputs/D_alpha_preferences.comp" selector="select_D_alpha" />
         <AddCompositionConstraintMover name=L_beta_comp
-            filename="comp/L_beta_preferences.comp" selector="select_L_beta" />
+            filename="inputs/L_beta_preferences.comp" selector="select_L_beta" />
         <AddCompositionConstraintMover name=D_beta_comp
-            filename="comp/D_beta_preferences.comp" selector="select_D_beta" />
+            filename="inputs/D_beta_preferences.comp" selector="select_D_beta" />
  
         # The PackRotamersMover optimizes side chain rotamers, permitting structure
         # refinement or design.  Here, it is used to design the peptide and to refine
