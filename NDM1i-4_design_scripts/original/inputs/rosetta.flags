@@ -1,19 +1,44 @@
+# On most clusters with queueing systems, it is simplest to set the number of output
+# structures to a large number and to allow Rosetta to write structures until the job times
+# out: 
 -nstruct 1000
-#-qsar:grid_dir grid_dir/
-#-qsar:max_grid_cache_size 0
--linmem_ig 32
+ 
+# Certain versions of Rosetta between 2018 and 2020 had problems with name-clashes between
+# Rosetta noncanonical types and residue types from the wwPDB Chemical Components Dictionary.
+# Although this issue has been resolved, this flag was a workaround:
 -load_PDB_components false
+ 
+# Automatically detect bonds to metals and set up constraints to preserve metal coordination
+# geometry:
 -auto_setup_metals
-#-metals_detection_LJ_multiplier 1.5
--jd2:delete_old_poses true
+ 
+# Write out virtual atoms to help with debugging.  These can be deleted in PyMOL by removing
+# atoms with element type X (“rm e. X”):
 -output_virtual true
+ 
+# Since we expect some jobs to fail due to filters that fail, we don’t want the executable
+# to return an error status if some jobs fail:
 -jd2:failed_job_exception false
+ 
+# Since glycine Ramachandran tables used for scoring are based on statistics from the Protein
+# Data Bank, they are biased towards glycine residues in positive-phi regions of Ramachandran
+# space.  When designing with D-amino acids, the following correction should always be
+# applied:
 -symmetric_gly_tables true
+ 
+# The input file, interpreted as a full-atom (as opposed to centroid) model:
 -in:file:s inputs/NDM-1_P2_model_alt_conformation_trimmed.pdb
 -in:file:fullatom
+ 
+# For convenience, write CONECT records to the output PDB file for all bonded atoms:
 -write_all_connect_info
--parser:protocol xml/round5design2.xml
+ 
+# The XML file defining the protocol to run:
+-parser:protocol xml/NDM1i_4_design.xml
+ 
+# We do not want Rosetta to delete the water molecules in the input PDB file:
 -ignore_waters false
+ 
+# Uncomment the following to mute unneeded output for production runs, to reduce the size of
+# log files:
 #-mute all
-#-unmute core.pack.pack_rotamers protocols.jd2 protocols.rosetta_scripts protocols.denovo_design.movers.FastDesign protocols.relax.FastRelax protocols.simple_filters.DdgFilter
-#-out:file:silent out.silent
