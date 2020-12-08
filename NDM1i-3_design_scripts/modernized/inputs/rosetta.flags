@@ -1,8 +1,26 @@
+# The number of designs to generate.  On most computing clusters, this can be set to a high
+# number, and jobs can be permitted to end when their time limit is reached:
 -nstruct 1000
--parser:protocol xml/design_8res.xml
+ 
+# The XML file to pass to the RosettaScripts parser:
+-parser:protocol xml/NDM1i_3_design.xml
+ 
+# The input PDB file, interpreted as a full-atom model (as opposed to a centroid model):
 -in:file:s inputs/Moriarty_xtal_chainB_pep_opened.pdb
 -in:file:fullatom
+ 
+# Output should include CONECT records for all bonded atoms, to aid visualization in PyMOL:
 -write_all_connect_info
+ 
+# Since glycine Ramachandran tables used for scoring are based on statistics from the Protein
+# Data Bank, they are biased towards glycine residues in positive-phi regions of Ramachandran
+# space.  When designing with D-amino acids, the following correction should always be
+# applied:
 -symmetric_gly_tables true
+ 
+# Do not exit with error status if some jobs fail (e.g. due to filters failing):
 -jd2:failed_job_exception false
--jd2:delete_old_poses true
+ 
+# The following line should be uncommented for production runs, to prevent writing of a large
+# output log:
+#-mute all
