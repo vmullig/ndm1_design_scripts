@@ -261,7 +261,7 @@
     # Move map factories define which parts of a structure can move and which parts are
     # fixed during energy minimization:
     <MOVE_MAP_FACTORIES>
-        # Keep the structure fixed except for side-chains near the peptide or hinge
+        # Keep the structure fixed except for side chains near the peptide or hinge
         # loop, backbone of the peptide and hing loop, and rigid-body transforms
         # other than the transform relating the first and last residues of the
         # (split) NDM-1 chain:
@@ -334,10 +334,10 @@
         <AddCompositionConstraintMover name="peptide_exposed_aa_composition"
             filename="inputs/peptide_surf.comp" selector="select_not_buried_and_peptide" />
  
-        # Carry out a round of design with energy-minimization.  Note that the
-        # task_operations must be listed on a single line:
+        # Carry out a round of design with energy-minimization:
         <FastDesign name="fdes1" repeats="1" scorefxn="r15_cst_voids"
-            movemap_factory="frlx_mm_factory" task_operations="resfile_positive_phi,resfile_negative_phi,only_repack_very_near_peptide,only_design_peptide"
+            movemap_factory="frlx_mm_factory"
+            task_operations="resfile_positive_phi,resfile_negative_phi,only_repack_very_near_peptide,only_design_peptide"
         />
         
         # Final relaxation (packing and energy-minimization), keeping amino acid
@@ -507,3 +507,4 @@
     # The final structure is re-scored with the ref2015 energy function:
     <OUTPUT scorefxn="r15" />
 </ROSETTASCRIPTS>
+
