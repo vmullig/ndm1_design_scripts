@@ -1,9 +1,25 @@
 <ROSETTASCRIPTS>
+        # This script was used to produce the NDM1i-4 peptides, using the NDM1i-3D crystal
+        # structure as a starting point and designing with an expanded palette of amino
+        # acid building-blocks.  Note that there is no legacy version; this is the version
+        # that was used.
+ 
+    # Energy functions are defined here:
     <SCOREFXNS>
+        # The default Rosetta ref2015 energy function:
         <ScoreFunction name="r15" weights="ref2015.wts" />
+ 
+        # The default energy function with the chainbreak term upweighted, used for
+        # relaxing structures:
         <ScoreFunction name="r15_relax" weights="ref2015_cst.wts" >
             <Reweight scoretype="chainbreak" weight="20.0" />
         </ScoreFunction>
+ 
+        # An energy function for the earlier rounds of design.  This heavily penalizes buried
+        # unsatisfied hydrogen bond donors and acceptors and buried voids, and gives a large
+        # bonus for hydrogen bond networks.  It also somewhat upweights backbone hydrogen
+        # bond terms in order to encourage satisfaction of backbone hydrogen bond donors and
+        # acceptors. 
         <ScoreFunction name="r15_design" weights="ref2015_cst.wts" >
             <Reweight scoretype="buried_unsatisfied_penalty" weight="30.0" />
             <Reweight scoretype="hbnet" weight="1.0" />
@@ -20,6 +36,10 @@
             <Set buried_unsatisfied_penalty_cone_angle_exponent="2.0" />
             <Set buried_unsatisfied_penalty_cone_angle_shift_factor="0.35" />
         </ScoreFunction>
+ 
+        # An energy function for the later rounds of design.  This more lightly penalizes 
+        # buried unsatisfied hydrogen bond donors and acceptors and buried voids, and gives a 
+        # smaller bonus for hydrogen bond networks.
         <ScoreFunction name="r15_design2" weights="ref2015_cst.wts" >
             <Reweight scoretype="buried_unsatisfied_penalty" weight="10.0" />
             <Reweight scoretype="hbnet" weight="0.5" />
@@ -35,95 +55,208 @@
             <Set buried_unsatisfied_penalty_cone_angle_shift_factor="0.35" />
         </ScoreFunction>
     </SCOREFXNS>
+ 
+    # Residue selectors select subsets of a structure based on user-defined rules:
     <RESIDUE_SELECTORS>
+        # Select macrocycle residues at the foldtree cutpoint:
         <Index name="select_pep_start" resnums="230" />
         <Index name="select_pep_end" resnums="237" />
+ 
+        # Select loop residues at the foldtree cutpoint:
         <Index name="select_loop_cutpoint_upper" resnums="29" />
         <Index name="select_loop_cutpoint_lower" resnums="28" />
+ 
+        # Select the peptide:
         <Index name="select_pep" resnums="230-237" />
+ 
+        # Select the target:
         <Not name="select_not_pep" selector="select_pep" />
+ 
+        # Select residues in the positive-phi and negative-phi regions of
+        # Ramachandran space:
         <Phi name="select_pos_phi" select_positive_phi="true" />
         <Not name="select_neg_phi" selector="select_pos_phi" />
+ 
+        # Select peptide residues in the positive-phi and negative-phi regions of
+        # Ramachandran space:
         <And name="select_pos_phi_and_pep" selectors="select_pos_phi,select_pep" />
         <And name="select_neg_phi_and_pep" selectors="select_neg_phi,select_pep" />
+ 
+        # Select the hinge loop:
         <Index name="select_ndm1_hingeloop" resnums="23-33" />
+ 
+        # Select the peptide and the hinge loop:
         <Or name="select_movable_loops" selectors="select_ndm1_hingeloop,select_pep" />
-        <Neighborhood name="select_pep_and_vicinity" include_focus_in_subset="true" selector="select_movable_loops" distance="8.0" />
+ 
+        # Select residues near the peptide, including the peptide:
+        <Neighborhood name="select_pep_and_vicinity" include_focus_in_subset="true"
+            selector="select_movable_loops" distance="8.0" />
+ 
+        # Select residues far from the peptide.  This does not include the peptide:
         <Not name="select_not_pep_or_vicinity" selector="select_pep_and_vicinity" />
+ 
+        # Select the anchor glutamate:
         <Index name="select_anchor_res" resnums="234" />
+ 
+        # Select the proline residue that we do not want to design:
         <Index name="select_preserved_pro" resnums="235" />
     </RESIDUE_SELECTORS>
+ 
+    # Packer palettes define the set of amino acids with which we will be designing by
+    # default.  Task operations can prune this list in a position-specific manner:
     <PACKER_PALETTES>
-        <CustomBaseTypePackerPalette name="packer_palette" additional_residue_types="DALA,DASP,DGLU,DPHE,DHIS,DILE,DLYS,DLEU,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR,NLU,NVL,DNLU,DNVL,ORN,DAB,DPP,DORN,DDAB,DDPP,AIB,B12,DB12,B96,DB96,BB8,DBB8,A43,DA43,A78,DA78,A80,DA80,B36,DB36" />
+        # Activate various non-canonical amino acids.  Note that the amino acids must be
+        # listed on a single line:
+        <CustomBaseTypePackerPalette name="packer_palette"
+            additional_residue_types="DALA,DASP,DGLU,DPHE,DHIS,DILE,DLYS,DLEU,DASN,DPRO,DGLN,
+            DARG,DSER,DTHR,DVAL,DTRP,DTYR,NLU,NVL,DNLU,DNVL,ORN,DAB,DPP,DORN,DDAB,DDPP,AIB,
+            B12,DB12,B96,DB96,BB8,DBB8,A43,DA43,A78,DA78,A80,DA80,B36,DB36"
+        />
     </PACKER_PALETTES>
+ 
+    # Task operations control the packer, which is used for rotamer optimization and sequence
+    # design:
     <TASKOPERATIONS>
-        <OperateOnResidueSubset name="only_repack_pro235" selector="select_preserved_pro" >
-            <RestrictToRepackingRLT />
-        </OperateOnResidueSubset>
+        # Allow additional task operations to be specified at the command-line:
         <InitializeFromCommandline name="init_from_commandline" />
+ 
+        # Activate extra-fine sampling when building rotamers:
         <ExtraRotamersGeneric name="extrarot" ex1="true" ex2="false" />
         <ExtraRotamersGeneric name="extrarot2" ex1="true" ex2="true" />
+ 
+        # Allow design only at peptide positions:
         <OperateOnResidueSubset name="only_design_pep" selector="select_not_pep" >
             <RestrictToRepackingRLT />
         </OperateOnResidueSubset>
-        <OperateOnResidueSubset name="only_pack_near_pep" selector="select_not_pep_or_vicinity" >  
+ 
+        # Prohibit packing outside of the vicinity of the peptide:
+        <OperateOnResidueSubset name="only_pack_near_pep"
+            selector="select_not_pep_or_vicinity"
+        >  
             <PreventRepackingRLT />
         </OperateOnResidueSubset>
-        <ProhibitSpecifiedBaseResidueTypes name="no_cys_gly_met" base_types="GLY,CYS,MET" selector="select_pep" />
-        <ProhibitResidueProperties name="only_l_at_neg_phi" selector="select_neg_phi_and_pep" properties="D_AA" />
-        <ProhibitResidueProperties name="only_d_at_pos_phi" selector="select_pos_phi_and_pep" properties="L_AA" />
+ 
+        # Do not design with glycine (too flexible), cysteine (forms unwanted disulphides),
+        # or methionine (risks oxidation):
+        <ProhibitSpecifiedBaseResidueTypes name="no_cys_gly_met" base_types="GLY,CYS,MET"
+            selector="select_pep"
+        />
+ 
+        # Prohibit D-amino acids at negative phi positions, and L-amino acids at positive-phi
+        # positions.  (Note that we’re prohibiting rather than requiring, so as not to
+        # exclude the achiral amino acid AIB).
+        <ProhibitResidueProperties name="only_l_at_neg_phi" selector="select_neg_phi_and_pep"
+            properties="D_AA"
+        />
+        <ProhibitResidueProperties name="only_d_at_pos_phi" selector="select_pos_phi_and_pep"
+            properties="L_AA"
+        />
+ 
+        # Prevent the glutamate anchor residue from packing:
         <OperateOnResidueSubset name="no_pack_anchor" selector="select_anchor_res">
             <PreventRepackingRLT />
         </OperateOnResidueSubset>
+ 
+        # Prevent all design:
         <RestrictToRepacking name="restrict_to_repacking" />
     </TASKOPERATIONS>
+ 
+    # Move map factories define the moveable degrees of freedom during energy minimization:
     <MOVE_MAP_FACTORIES>
+        # This move map factory specifies that the only moveable degrees of freedom will be
+        # the backbone of the peptide and hinge loop, and the side chains near the peptide:
         <MoveMapFactory name="mm_factory" bb="false" chi="false" jumps="false" >
             <Backbone residue_selector="select_movable_loops" />
             <Chi residue_selector="select_pep_and_vicinity" />
         </MoveMapFactory>
     </MOVE_MAP_FACTORIES>
+ 
+    # Simple metrics measure properties of a structure and allow those measurements to be
+    # stored in the pose and written out with the PDB file.  Here, we use them to record
+    # the peptide sequence to allow peptide structure prediction to be set up more easily:
     <SIMPLE_METRICS>
-        <SequenceMetric name="capture_sequence" output_mode="basename" residue_selector="select_pep" />
+        <SequenceMetric name="capture_sequence" output_mode="basename"
+            residue_selector="select_pep"
+        />
     </SIMPLE_METRICS>
+ 
+    # We include an additional MOVERS block here to define a mover that will be used by the
+    # Ddg filter:
     <MOVERS>
-        <FastRelax name="frelax_for_filter" repeats="3" scorefxn="r15_relax" movemap_factory="mm_factory" task_operations="only_repack_pro235,extrarot2,restrict_to_repacking,only_pack_near_pep" relaxscript="MonomerRelax2019" />
+        # A FastRelax mover for the Ddg filter.  Note that the task operations must be listed
+        # on a single line:
+        <FastRelax name="frelax_for_filter" repeats="3" scorefxn="r15_relax"
+            movemap_factory="mm_factory"
+            task_operations="extrarot2,restrict_to_repacking,
+            only_pack_near_pep" relaxscript="MonomerRelax2019"
+        />
     </MOVERS>
+ 
+    # Filters measure properties of structures and make pass/fail decisions based
+    # on their measurements:
     <FILTERS>
-        <ShapeComplementarity name="shape_complementarity" min_sc="0.4" min_interface="250" write_int_area="true" residue_selector1="select_pep" residue_selector2="select_not_pep" />
-        <Ddg name="ddg" jump="2" confidence="1" threshold="-10.0" scorefxn="r15" repeats="15" repack="true" repack_unbound="false" relax_unbound="true" repack_bound="false" relax_bound="true" relax_mover="frelax_for_filter" translate_by="10000" extreme_value_removal="true" />
+        # Measure shape complementarity of peptide to target:
+        <ShapeComplementarity name="shape_complementarity" min_sc="0.4" min_interface="250"
+            write_int_area="true" residue_selector1="select_pep"
+            residue_selector2="select_not_pep"
+        />
+ 
+        # Estimate delta-G of binding:
+        <Ddg name="ddg" jump="2" confidence="1" threshold="-10.0" scorefxn="r15"
+            repeats="15" repack="true" repack_unbound="false" relax_unbound="true"
+            repack_bound="false" relax_bound="true" relax_mover="frelax_for_filter"
+            translate_by="10000" extreme_value_removal="true"
+         />
     </FILTERS>
+ 
+    # Movers modify a structure in some way:
     <MOVERS>
-        <!-- For testing only -->
-        <MutateResidue name="mut_to_ala" target="237" new_res="ALA" />
-
-        <!-- Set up cyclization -->
+        # Set up cyclization:
         <DeclareBond name="cyclization_bond" res1="237" res2="230" atom1="C" atom2="N" />
+ 
+        # Update H and O atoms at the cutpoint in the hinge loop:
         <DeclareBond name="loop_bond" res1="28" res2="29" atom1="C" atom2="N" />
-
-        <!-- Add outpoint variants -->
-                <ModifyVariantType name="add_cutpoint_upper_pep" add_type="CUTPOINT_UPPER" residue_selector="select_pep_start" />
-                <ModifyVariantType name="add_cutpoint_lower_pep" add_type="CUTPOINT_LOWER" residue_selector="select_pep_end" />
-                <ModifyVariantType name="add_cutpoint_upper_loop" add_type="CUTPOINT_UPPER" residue_selector="select_loop_cutpoint_upper" />
-                <ModifyVariantType name="add_cutpoint_lower_loop" add_type="CUTPOINT_LOWER" residue_selector="select_loop_cutpoint_lower" />
-
-        <!-- Set up fold tree -->
+ 
+        # Add cutpoint variants:
+        <ModifyVariantType name="add_cutpoint_upper_pep" add_type="CUTPOINT_UPPER"
+            residue_selector="select_pep_start"
+        />
+        <ModifyVariantType name="add_cutpoint_lower_pep" add_type="CUTPOINT_LOWER"
+            residue_selector="select_pep_end"
+        />
+        <ModifyVariantType name="add_cutpoint_upper_loop" add_type="CUTPOINT_UPPER"
+            residue_selector="select_loop_cutpoint_upper"
+        />
+        <ModifyVariantType name="add_cutpoint_lower_loop" add_type="CUTPOINT_LOWER"
+            residue_selector="select_loop_cutpoint_lower"
+        />
+ 
+        # Set up the fold tree:
         <AtomTree name="foldtree1" fold_tree_file="inputs/foldtree1.txt" />
-
-        <!-- Perturb the anchor residue a bit -->
+ 
+        # Add a small perturbation to the anchor’s mainchain and side chain dihedral angles:
         <SetTorsion name="perturb_anchor" >
-            <Torsion residue="234" torsion_name="phi" angle="perturb" perturbation_type="gaussian" perturbation_magnitude="5.0" />
-            <Torsion residue="234" torsion_name="psi" angle="perturb" perturbation_type="gaussian" perturbation_magnitude="5.0" />
-            <Torsion residue="pick_atoms" angle="perturb" perturbation_type="gaussian" perturbation_magnitude="5.0" >
+            <Torsion residue="234" torsion_name="phi" angle="perturb"
+                perturbation_type="gaussian" perturbation_magnitude="5.0"
+            />
+            <Torsion residue="234" torsion_name="psi" angle="perturb"
+               perturbation_type="gaussian" perturbation_magnitude="5.0"
+            />
+            <Torsion residue="pick_atoms" angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0"
+            >
                 <Atom1 residue="234" atom="N" />
                 <Atom2 residue="234" atom="CA" />
                 <Atom3 residue="234" atom="CB" />
                 <Atom4 residue="234" atom="CG" />
             </Torsion>
         </SetTorsion>
-
-        <!-- Perturb the peptide -->
-        <GeneralizedKIC name="genkic_pep" pre_selection_mover="cyclization_bond" closure_attempts="1000" correct_polymer_dependent_atoms="true" stop_when_n_solutions_found="20" selector="lowest_rmsd_selector" >
+ 
+        # This GenKIC mover adds a small perturbation to the peptide conformation:
+        <GeneralizedKIC name="genkic_pep" pre_selection_mover="cyclization_bond"
+            closure_attempts="1000" correct_polymer_dependent_atoms="true"
+            stop_when_n_solutions_found="20" selector="lowest_rmsd_selector"
+        >
             <AddResidue res_index="235" />
             <AddResidue res_index="236" />
             <AddResidue res_index="237" />
@@ -132,7 +265,8 @@
             <AddResidue res_index="232" />
             <AddResidue res_index="233" />
             <SetPivots res1="235" res2="231" res3="233" atom1="CA" atom2="CA" atom3="CA" />
-            <CloseBond atom1="C" atom2="N" res1="237" res2="230" bondlength="1.328685" angle1="116.199993" angle2="121.699997" torsion="180" />
+            <CloseBond atom1="C" atom2="N" res1="237" res2="230" bondlength="1.328685"
+                angle1="116.199993" angle2="121.699997" torsion="180" />
             <AddPerturber effect="perturb_dihedral" >
                 <AddAtoms res1="235" res2="235" atom1="N" atom2="CA" />
                 <AddAtoms res1="236" res2="236" atom1="N" atom2="CA" />
@@ -141,7 +275,7 @@
                 <AddAtoms res1="231" res2="231" atom1="N" atom2="CA" />
                 <AddAtoms res1="232" res2="232" atom1="N" atom2="CA" />
                 <AddAtoms res1="233" res2="233" atom1="N" atom2="CA" />
-
+ 
                 <AddAtoms res1="235" res2="235" atom1="CA" atom2="C" />
                 <AddAtoms res1="236" res2="236" atom1="CA" atom2="C" />
                 <AddAtoms res1="237" res2="237" atom1="CA" atom2="C" />
@@ -149,15 +283,18 @@
                 <AddAtoms res1="231" res2="231" atom1="CA" atom2="C" />
                 <AddAtoms res1="232" res2="232" atom1="CA" atom2="C" />
                 <AddAtoms res1="233" res2="233" atom1="CA" atom2="C" />
-
+ 
                 <AddValue value="5.0" />
             </AddPerturber>
             <AddFilter type="loop_bump_check" />
         </GeneralizedKIC>
-
-
-        <!-- Perturb the loop -->
-        <GeneralizedKIC name="genkic_loop" pre_selection_mover="loop_bond" closure_attempts="1000" correct_polymer_dependent_atoms="true" stop_when_n_solutions_found="20" selector="lowest_rmsd_selector" >
+ 
+ 
+        # This GenKIC mover perturbs the hinge loop:
+        <GeneralizedKIC name="genkic_loop" pre_selection_mover="loop_bond"
+            closure_attempts="1000" correct_polymer_dependent_atoms="true"
+            stop_when_n_solutions_found="20" selector="lowest_rmsd_selector"
+        >
             <AddResidue res_index="23" />
             <AddResidue res_index="24" />
             <AddResidue res_index="25" />
@@ -170,7 +307,8 @@
             <AddResidue res_index="32" />
             <AddResidue res_index="33" />
             <SetPivots res1="23" res2="28" res3="33" atom1="CA" atom2="CA" atom3="CA" />
-            <CloseBond atom1="C" atom2="N" res1="28" res2="29" bondlength="1.328685" angle1="116.199993" angle2="121.699997" torsion="180" />
+            <CloseBond atom1="C" atom2="N" res1="28" res2="29" bondlength="1.328685"
+                angle1="116.199993" angle2="121.699997" torsion="180" />
             <AddPerturber effect="perturb_dihedral" >
                 <AddAtoms res1="23" res2="23" atom1="N" atom2="CA" />
                 <AddAtoms res1="24" res2="24" atom1="N" atom2="CA" />
@@ -183,7 +321,7 @@
                 <AddAtoms res1="31" res2="31" atom1="N" atom2="CA" />
                 <AddAtoms res1="32" res2="32" atom1="N" atom2="CA" />
                 <AddAtoms res1="33" res2="33" atom1="N" atom2="CA" />
-
+ 
                 <AddAtoms res1="23" res2="23" atom1="CA" atom2="C" />
                 <AddAtoms res1="24" res2="24" atom1="CA" atom2="C" />
                 <AddAtoms res1="25" res2="25" atom1="CA" atom2="C" />
@@ -195,22 +333,42 @@
                 <AddAtoms res1="31" res2="31" atom1="CA" atom2="C" />
                 <AddAtoms res1="32" res2="32" atom1="CA" atom2="C" />
                 <AddAtoms res1="33" res2="33" atom1="CA" atom2="C" />
-
+ 
                 <AddValue value="3.0" />
             </AddPerturber>
             <AddFilter type="loop_bump_check" />
         </GeneralizedKIC>
-
-        <!-- Add the amino acid composition constraints -->
-        <AddCompositionConstraintMover name="add_comp" filename="inputs/design.comp" selector="select_pep" />
-
-        <!-- Actually do the design -->
-        <FastDesign name="fdes1" packer_palette="packer_palette" repeats="3" relaxscript="InterfaceDesign2019" scorefxn="r15_design" task_operations="only_repack_pro235,init_from_commandline,extrarot,no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,only_pack_near_pep,only_design_pep" movemap_factory="mm_factory" />
-        <FastDesign name="fdes2" packer_palette="packer_palette" repeats="3" relaxscript="InterfaceDesign2019" scorefxn="r15_design2" task_operations="only_repack_pro235,init_from_commandline,extrarot,no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,only_pack_near_pep,only_design_pep" movemap_factory="mm_factory" />
-
-        <!-- Store the amino acid sequence at the end for output in the PDB file -->
+ 
+        # Add the amino acid composition constraints:
+        <AddCompositionConstraintMover name="add_comp" filename="inputs/design.comp"
+            selector="select_pep"
+        />
+ 
+        # A first round of design, with strong penalties for buried unsatisfied
+        # hydrogen bond donors and acceptors or buried voids.  Note that the task_operations
+        # must be listed on a single line:
+        <FastDesign name="fdes1" packer_palette="packer_palette" repeats="3"
+            relaxscript="InterfaceDesign2019" scorefxn="r15_design"
+            task_operations="init_from_commandline,extrarot,
+            no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,
+            only_pack_near_pep,only_design_pep" movemap_factory="mm_factory"
+        />
+ 
+        # A second round of design, with slightly weaker penalties for buried unsatisfied
+        # hydrogen bond donors and acceptors or buried voids.  Note that the task_operations
+        # must be listed on a single line:
+        <FastDesign name="fdes2" packer_palette="packer_palette" repeats="3"
+            relaxscript="InterfaceDesign2019" scorefxn="r15_design2"
+            task_operations="init_from_commandline,extrarot,
+            no_cys_gly_met,no_pack_anchor,only_l_at_neg_phi,only_d_at_pos_phi,
+            only_pack_near_pep,only_design_pep" movemap_factory="mm_factory"
+        />
+ 
+        # Store the amino acid sequence at the end for output in the PDB file:
         <RunSimpleMetrics name="run_metrics" metrics="capture_sequence" prefix="SEQ_" />
     </MOVERS>
+ 
+    # Movers and filters that are defined above are listed here to define a protocol:
     <PROTOCOLS>
         <Add mover="cyclization_bond" />
         <Add mover="foldtree1" />
@@ -228,5 +386,4 @@
         <Add filter="shape_complementarity" />
         <Add filter="ddg" />
     </PROTOCOLS>
-    <OUTPUT />
 </ROSETTASCRIPTS>
