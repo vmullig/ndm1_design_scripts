@@ -1,0 +1,595 @@
+<ROSETTASCRIPTS>
+        # This script takes as input the 4EXS structure with an 8-residue peptide in the active
+        # site, in an open conformation.  It uses generalized kinematic closure to close the
+        # peptide, forming an N-to-C peptide macrocycle.  It then designs the sequence of the
+        # peptide, and applies various filters.  If filters pass, it proceeds to carry out a
+        # Monte Carlo search of local conformation space, designing at each step, to try to
+        # improve the shape complementarity.
+        # This script was tested with the Rosetta version that was current as of 20 May 2020
+        # (Git SHA1 cb360c57ed4ba63d45678afba4bf6a39d8dd958d).  Weekly releases after this
+        # point, and Rosetta 3.13, will be able to run it.
+ 
+    # In the SCOREFXNS section, we define scoring functions used for design and energy
+    # minimization.
+    <SCOREFXNS>
+        # A basic scoring function, with an added penalty discouraging sequences that promote
+        # formation of aspartimide byproducts during peptide synthesis.  Note that at the time
+        # this script was written, the energy function used was a beta version of the energy
+        # function called “beta_nov15”.  It has since been renamed “ref2015”, and is the current
+        # default energy function in newer versions of Rosetta:
+        <ScoreFunction name="r15" weights="ref2015.wts" >
+            <Reweight scoretype="aspartimide_penalty" weight="1.0" />
+        </ScoreFunction>
+        # A “soft” variation of the scoring function with more permissive atomic repulsive
+        # potentials, useful for design steps.  This scoring function also activates geometric
+        # and amino acid composition constraint terms.
+        <ScoreFunction name="r15_soft" weights="ref2015_soft.wts">
+            <Reweight scoretype="aspartimide_penalty" weight="1.0" />
+            <Reweight scoretype="atom_pair_constraint" weight="1.0" />
+            <Reweight scoretype="angle_constraint" weight="1.0" />
+            <Reweight scoretype="dihedral_constraint" weight="1.0" />
+            <Reweight scoretype="aa_composition" weight="1.0" />
+        </ScoreFunction>
+        # A basic scoring function, with an added penalty discouraging sequences that promote
+        # formation of aspartimide byproducts during peptide synthesis.  This version also
+        # activates geometric constraint terms and upweights the chainbreak term:
+        <ScoreFunction name="r15_cst" weights="ref2015_cst.wts" >
+            <Reweight scoretype="chainbreak" weight="40.0" />
+            <Reweight scoretype="aspartimide_penalty" weight="1.0" />
+        </ScoreFunction>
+        # A variation on the constrained scoring function with the aspartimide penalty term
+        # activated and hydrogen bonding, electrostatic, and chainbreak  terms upweighted:
+        <ScoreFunction name="r15_highhbond_cst" weights="ref2015_cst.wts" >
+            <Reweight scoretype="chainbreak" weight="40.0" />
+            <Reweight scoretype="aspartimide_penalty" weight="1.0" />
+            <Reweight scoretype="hbond_sr_bb" weight="10.0" />
+            <Reweight scoretype="hbond_lr_bb" weight="10.0" />
+            <Reweight scoretype="hbond_bb_sc" weight="5.0" />
+            <Reweight scoretype="hbond_sc" weight="3.0" />
+            <Reweight scoretype="fa_elec" weight="2.0" />
+        </ScoreFunction>
+        # A variation on the previous scoring function that also has the amino acid composition
+        # penalty activated as well:
+        <ScoreFunction name="r15_highhbond_aacomp_cst" weights="ref2015_cst.wts" >
+            <Reweight scoretype="chainbreak" weight="40.0" />
+            <Reweight scoretype="aspartimide_penalty" weight="1.0" />
+            <Reweight scoretype="hbond_sr_bb" weight="10.0" />
+            <Reweight scoretype="hbond_lr_bb" weight="10.0" />
+            <Reweight scoretype="hbond_bb_sc" weight="5.0" />
+            <Reweight scoretype="hbond_sc" weight="3.0" />
+            <Reweight scoretype="fa_elec" weight="2.0" />
+            <Reweight scoretype="aa_composition" weight="1.0" />
+        </ScoreFunction>
+    </SCOREFXNS>
+ 
+    # The RESIDUE_SELECTORS section establishes residue selectors, which are rules for selecting
+    # a subset of a structure for other modules to operate upon.
+    <RESIDUE_SELECTORS>
+        # These residue selectors select the peptide, the original stub residues, or just the
+        # D-cysteine residue in the stub:
+        <Index name="select_peptide" resnums="234-241" />
+        <Index name="select_stub" resnums="237-238" />
+        <Index name="select_stub_dcys" resnums="237" />
+
+        # Select the start and end residues of the peptiide: 
+        <Index name="select_pep_start" resnums="234" />
+        <Index name="select_pep_end" resnums="241" />
+
+        # This selector inverts the peptide selection, selecting the target protein:
+        <Not name="select_target" selector="select_peptide" />
+ 
+        # These selectors select residues based on backbone conformation, selecting residues with
+        # negative and positive backbone phi angles, respectively:
+        <Phi name="select_neg_phi" select_positive_phi="false" />
+        <Not name="select_pos_phi" selector="select_neg_phi" />
+ 
+        # Since the stub residues of the peptide are not designed, this selector selects only
+        # the designable subset of positions:
+        <Index name="select_design_positions" resnums="234-236,239-241" />
+ 
+        # This selector selects positions within the peptide with positive phi values, which will
+        # only be permitted to assume D-amino acid identities:
+        <And name="select_D_positions" selectors="select_design_positions,select_pos_phi" />
+ 
+        # This selector selects positions within the peptide with negative phi values, which will
+        # only be permitted to assume L-amino acid identities:
+        <And name="select_L_positions" selectors="select_design_positions,select_neg_phi" />
+ 
+        # This selector selects positions within the peptide in backbone bin “A” (corresponding
+        # to the left-handed alpha helical region of Ramachandran space:
+        <Bin name="select_L_alpha" bin_params_file="ABBA.bin_params" bin="A" />
+ 
+        # This selector selects positions within the peptide in backbone bin “X”, a.k.a. “Aprime”
+        # (corresponding to the right-handed alpha helical region of Ramachandran space:
+        <Bin name="select_D_alpha" bin_params_file="ABBA.bin_params" bin="Aprime" />
+ 
+        # This selector selects positions within the peptide in backbone bin “B” (corresponding
+        # to the left-handed beta strand region of Ramachandran space:
+        <Bin name="select_L_beta" bin_params_file="ABBA.bin_params" bin="B" />
+ 
+        # This selector selects positions within the peptide in backbone bin “Y”, a.k.a. “Bprime”
+        # (corresponding to the right-handed beta strand region of Ramachandran space:
+        <Bin name="select_D_beta" bin_params_file="ABBA.bin_params" bin="Bprime" />
+ 
+        # This selector selects positions on the target near the peptide, which will be allowed
+        # to repack during peptide sequence design:
+        <Neighborhood name="select_interface" resnums="234-241" distance="8.0" />
+ 
+        # This selector selects positions far from the interface:
+        <Not name="not_interface" selector="select_interface" />
+ 
+        # This selector selects positions far from the interface which are part of the target,
+        # which will be fixed during design:
+        <And name="select_target_far_from_interface" selectors="select_interface,select_target" />
+        
+       
+        # This selector selects buried residues: 
+        <Layer name="select_core" select_core="true" select_boundary="false" select_surface="false" />
+ 
+        # This selector selects buried positions that are also designable:
+        <And name="select_hydrophobic_positions" selectors="select_design_positions,select_core" />
+ 
+        # This selector selects exposed residues:        
+        <Not name="select_nonhydrophobic_positions" selector="select_hydrophobic_positions" />
+ 
+        # This selector selects exposed positions that are also designable:
+        <And name="select_nonhydrophobic_design_positions"
+            selectors="select_nonhydrophobic_positions,select_design_positions" />
+ 
+        # The following four selectors select every combination of (negative phi or positive phi
+        # positions) and (buried or exposed positions).
+        <And name="select_L_hydrophobic_positions"
+            selectors="select_hydrophobic_positions,select_L_positions" />
+        <And name="select_D_hydrophobic_positions"
+            selectors="select_hydrophobic_positions,select_D_positions" />
+        <And name="select_L_nonhydrophobic_positions"
+            selectors="select_nonhydrophobic_design_positions,select_L_positions" />
+        <And name="select_D_nonhydrophobic_positions"
+            selectors="select_nonhydrophobic_design_positions,select_D_positions" />
+    </RESIDUE_SELECTORS>
+
+    # The PACKER_PALETTES section defines palettes of amino acid types that will be used for
+    # design by default.  Our default palette should include D-amino acids.
+    <PACKER_PALETTES>
+        # The CustomBaseTypePackerPalette defines the canonical amino acids as types that will
+        # be used by default, and allows the user to add additional types.  We will add the D-
+        # amino acid mirror images of the canononical amino acids.
+        <CustomBaseTypePackerPalette name="design_palette"
+            additional_residue_types="DALA,DASP,DGLU,DHIS,DILE,DLYS,DLEU,DMET,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR" />
+    </PACKER_PALETTES>
+ 
+    # The TASKOPERATIONS section defines task operations, which are rules for controlling the
+    # Rosetta packer.  The Rosetta packer optimizes side-chain rotamers and carries out sequence
+    # design, so task operations define design problems.
+    <TASKOPERATIONS>
+        # Include the input rotamer, even if it is shifted from a rotamer well, in the set of
+        # rotamers allowed at a position:
+        <IncludeCurrent name="use_input_rotamer" />
+ 
+        # Sample finer levels of discretization of rotamers:
+        <ExtraRotamersGeneric name="extrarot" ex1="1" ex2="1" ex3="0" ex4="0" extrachi_cutoff="5" />
+ 
+        # Prevent repacking of the NDM-1 target protein:
+        <OperateOnResidueSubset name="no_repack_target" selector="select_target" >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+ 
+        # Prevent design of the NDM-1 target protein:
+        <OperateOnResidueSubset name="no_design_target" selector="select_target" >
+            <RestrictToRepackingRLT />
+        </OperateOnResidueSubset>
+ 
+        # Prevent repacking of the D-cysteine, L-proline stub within the peptide:
+        <OperateOnResidueSubset name="no_repack_stub_dcys" selector="select_stub_dcys" >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+ 
+        # Prevent design of the D-cysteine, L-proline stub within the peptide:
+        <OperateOnResidueSubset name="no_design_stub" selector="select_stub" >
+            <RestrictToRepackingRLT />
+        </OperateOnResidueSubset>
+
+        # Don't design with cysteine or glycine.
+        <ProhibitSpecifiedBaseResidueTypes name="no_cys_gly" base_types="CYS,DCYS,GLY" selector="select_design_positions" />
+ 
+        # Apply restrictions on allowed residues at positive phi positions that are exposed.
+        <RestrictToResidueProperties name="D_design" properties="D_AA" selector="select_D_nonhydrophobic_positions" />
+ 
+        # Apply restrictions on allowed residues at positive phi positions that are buried:
+        <RestrictToSpecifiedBaseResidueTypes name="D_hydrophobic_design" base_types="DPHE,DILE,DLEU,DMET,DPRO,DVAL,DTRP,DTYR" selector="select_D_hydrophobic_positions" />
+ 
+        # Apply restrictions on allowed residues at negative phi positions that are exposed:
+        <RestrictToResidueProperties name="L_design" properties="L_AA" selector="select_L_nonhydrophobic_positions" />
+ 
+        # Apply restrictions on allowed residues at negative phi positions that are buried:
+        <RestrictToSpecifiedBaseResidueTypes name="L_hydrophobic_design" base_types="PHE,ILE,LEU,MET,PRO,VAL,TRP,TYR" selector="select_L_hydrophobic_positions"/>
+ 
+        # Do not allow repacking of NDM-1 residues far from the peptide:
+        <OperateOnResidueSubset name="no_repack_target_far_from_interface"
+            selector="select_target_far_from_interface" >
+            <PreventRepackingRLT />
+        </OperateOnResidueSubset>
+    </TASKOPERATIONS>
+ 
+    # The FILTERS section defines Rosetta filters, which are Rosetta algorithms to analyze a
+    # structure, measure properties of that structure, and accept or reject that structure based
+    # on the measured properties:
+    <FILTERS>
+        # These filters measure shape complementarity of the peptide to the target:
+        <ShapeComplementarity name="shape1" min_sc="0.63" min_interface="150" jump="3" />
+        <ShapeComplementarity name="shape2" min_sc="0.66" min_interface="150" jump="3" />
+        <ShapeComplementarity name="shape3" min_sc="0.66" min_interface="150" jump="3" />
+ 
+        # This filter is used in early stages to discard sampled peptide conformations in which
+        # molecular geometry clashes egregiously with the target:
+        <ScoreType name="low_stringency_clash" scorefxn="r15" score_type="fa_rep" threshold="400" />
+ 
+        # Rosetta’s pairwise-decomposible scoring function is unable to detect cases in which
+        # three or more hydrogen bond donors all donate to the same acceptor.  This filter
+        # detects and eliminates this pathology:
+        <OversaturatedHbondAcceptorFilter name="oversat" scorefxn="r15" max_allowed_oversaturated="0"
+            consider_mainchain_only="false" />
+ 
+
+        # Count internal backbone-backbone hydrogen bonds, excluding hydrogen bonds between adjacent
+        # residues, and discard structures with fewer than 3 internal hydrogen bonds.  Note that this
+        # filter, which is simpler to configure and faster to evaluate, was not available in earlier
+        # releases of Rosetta.:
+        <PeptideInternalHbondsFilter name="total_hbonds" hbond_cutoff="3" exclusion_distance="1" residue_selector="select_peptide" /> 
+        <PeptideInternalHbondsFilter name="total_hbonds_2" hbond_cutoff="3" exclusion_distance="1" residue_selector="select_peptide" /> 
+ 
+        # This filter measures the energy, biased towards hydrogen bonds and electrostatic terms,
+        # following a Monte Carlo move:
+        <ScoreType name="mc_score" scorefxn="r15_highhbond_aacomp_cst" score_type="total_score"
+            threshold="999999" />
+ 
+        # This filter is used during the Monte Carlo simulation to compute the value passed to
+        # the Metropolis evaluator to determine whether moves pass or fail:
+        <CombinedValue name="mc_filter" threshold="99999">
+            <Add filter_name="mc_score" factor="1.0" />
+            <Add filter_name="shape2" factor="-100.0" />
+        </CombinedValue>
+    </FILTERS>
+ 
+    # The MOVERS section sets up movers, which operate on a structure to alter it in some way.
+    # Some sample conformations, others design sequences, others carry out energy minimization,
+    # etc.
+    <MOVERS>
+        # The PeptideStubMover apppends or prepends residues to an existing structure.
+        <PeptideStubMover name="extend" >
+            <Prepend anchor_rsd="234" resname="GLY" />
+            <Prepend anchor_rsd="234" resname="GLY" />
+            <Prepend anchor_rsd="234" resname="GLY" />
+            <Append anchor_rsd="238" resname="GLY" />
+            <Append anchor_rsd="239" resname="GLY" />
+            <Append anchor_rsd="240" resname="GLY" />
+        </PeptideStubMover>
+
+        # The AtomTree mover sets up the fold tree, which defines the kinematic relationships
+        # between different parts of a structure:
+        <AtomTree name="foldtree1" fold_tree_file="inputs/foldtree1.txt" />
+ 
+        # This SetTorsion mover is used to initialize the torsions for the dihedral angles at the
+        # start and end of the D-cysteine-L-proline stub.  It sets these to ideal values and then
+        # adds a small random perturbation.  It also ensures that all omega angles are 180
+        # degrees.
+        <SetTorsion name="initialize_tors">
+            <Torsion residue="234" torsion_name="omega" angle="180.0" />
+            <Torsion residue="235" torsion_name="omega" angle="180.0" />
+            <Torsion residue="236" torsion_name="omega" angle="180.0" />
+            <Torsion residue="237" torsion_name="phi"   angle="60.0" />
+            <Torsion residue="237" torsion_name="phi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="30.0" />
+            <Torsion residue="237" torsion_name="psi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0" />
+            <Torsion residue="237" torsion_name="omega" angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0" />
+            <Torsion residue="238" torsion_name="phi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0" />
+            <Torsion residue="238" torsion_name="psi"   angle="-10.0" />
+            <Torsion residue="238" torsion_name="psi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="30.0" />
+            <Torsion residue="238" torsion_name="omega" angle="180.0" />
+            <Torsion residue="239" torsion_name="omega" angle="180.0" />
+            <Torsion residue="240" torsion_name="omega" angle="180.0" />
+        </SetTorsion>
+ 
+        # This SetTorsion mover adds a smaller random perturbation to all backbone degrees of
+        # freedom of the stub:
+        <SetTorsion name="perturb_tors">
+            <Torsion residue="237" torsion_name="phi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0" />
+            <Torsion residue="237" torsion_name="psi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="1.0" />
+            <Torsion residue="237" torsion_name="omega" angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="1.0" />
+            <Torsion residue="238" torsion_name="phi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="1.0" />
+            <Torsion residue="238" torsion_name="psi"   angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="5.0" />
+            <Torsion residue="238" torsion_name="omega" angle="perturb" perturbation_type="gaussian"
+                perturbation_magnitude="1.0" />
+        </SetTorsion>
+ 
+        # This mover adds a chemical bond between the first and last residues of the peptide.  It
+        # has the side-effect of correcting the placement of oxygen and hydrogen atoms flanking
+        # the amide bond, and so is used repeatedly to update these placements.  Note that this
+        # is less likely in more recent versions of Rosetta, since the cutpoint variant types
+        # have been updated to ensure that hydrogen and oxygen placement remains reasonable at
+        # cutpoints during minimization:
+        <DeclareBond name="connect_termini" atom1="N" res1="234" atom2="C" res2="241" add_termini="true" />
+
+        # Add cutpoint variants to the cyclization point in the peptide.  The cutpoint variant
+        # works with the chainbreak scoring term to ensure that good amide bond geometry is
+        # maintained during energy minimization:
+        <ModifyVariantType name="add_cutpoint_upper_pep" add_type="CUTPOINT_UPPER" residue_selector="select_pep_start" />
+        <ModifyVariantType name="add_cutpoint_lower_pep" add_type="CUTPOINT_LOWER" residue_selector="select_pep_end" /> 
+
+        # These movers add amino acid composition constraints to the whole peptide, to negative-
+        # phi positions in the alpha-helix region of Ramachandran space, to negative-phi
+        # positions in the beta-sheet region of Ramachandran space, to positive-phi positions in
+        # the right-handed alpha-helix region of Ramachandran space, and to positive-phi
+        # positions in the right-handed beta-sheet region of Ramachandran space, respectively:
+        <AddCompositionConstraintMover name="global_comp" filename="comp/global_preferences.comp"
+            selector="select_design_positions" />
+        <AddCompositionConstraintMover name="L_alpha_comp" filename="comp/L_alpha_preferences.comp"
+            selector="select_L_alpha" />
+        <AddCompositionConstraintMover name="D_alpha_comp" filename="comp/D_alpha_preferences.comp"
+            selector="select_D_alpha" />
+        <AddCompositionConstraintMover name="L_beta_comp" filename="comp/L_beta_preferences.comp"
+            selector="select_L_beta" />
+        <AddCompositionConstraintMover name="D_beta_comp" filename="comp/D_beta_preferences.comp"
+            selector="select_D_beta" />
+ 
+        # The PackRotamersMover optimizes side-chain rotamers, permitting structure refinement or
+        # design.  Here, it is used to design the peptide and to refine side-chain conformations
+        # on the target:
+        <PackRotamersMover name="softdesign" scorefxn="r15_soft" packer_palette="design_palette"
+            task_operations="use_input_rotamer,no_design_target,no_repack_target,no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,D_hydrophobic_design,L_hydrophobic_design"
+        />
+ 
+        # The MinMover relaxes a structure through gradient-descent minimizatoin.  This one
+        # is configured to minimize only side-chains of the peptide.  Note that more recent
+        # versions of Rosetta permit more robust configuration of the minimizer through
+        # move map factories:
+        <MinMover name="min1" scorefxn="r15_cst" type="dfpmin" tolerance="0.001" bb="0" chi="0" >
+            <MoveMap name="min1_mm" >
+                <Jump number="1" setting="0" />
+                <Jump number="2" setting="0" />
+                <Jump number="3" setting="0" />
+                <Jump number="4" setting="0" />
+                <Jump number="5" setting="0" />
+                <Jump number="6" setting="0" />
+                <Jump number="7" setting="0" />
+                <Jump number="8" setting="0" />
+                <Jump number="9" setting="0" />
+                <Span begin="1" end="999" chi="0" bb="0" />
+                <Span begin="234" end="241" chi="1" bb="0" />
+            </MoveMap>
+        </MinMover>
+ 
+        # This MinMover permits both side-chain and backbone minimization of the peptide, but
+        # keeps the rest of the structure rigid:
+        <MinMover name="min2" scorefxn="r15_cst" type="dfpmin" tolerance="0.001" bb="0" chi="0">
+            <MoveMap name="min2_mm" >
+                <Jump number="1" setting="0" />
+                <Jump number="2" setting="0" />
+                <Jump number="3" setting="0" />
+                <Jump number="4" setting="0" />
+                <Jump number="5" setting="0" />
+                <Jump number="6" setting="0" />
+                <Jump number="7" setting="0" />
+                <Jump number="8" setting="0" />
+                <Jump number="9" setting="0" />
+                <Span begin="1" end="999" chi="0" bb="0" />
+                <Span begin="234" end="241" chi="1" bb="1" />
+            </MoveMap>
+        </MinMover>
+ 
+        # FastDesign performs alternating rounds of packing and minimization while ramping the
+        # repulsive term in the scoring function from an initial low value.  This FastDesign
+        # instance is configured to design the peptide and repack the target interface, and to
+        # allow peptide side-chains and backbone and target side-chains to move during energy
+        # minimization:
+        <FastDesign name="fdes" repeats="3" scorefxn="r15_highhbond_aacomp_cst" min_type="dfpmin"
+            packer_palette="design_palette"
+            task_operations="use_input_rotamer,no_repack_target_far_from_interface,no_design_target,no_design_stub,no_repack_stub_dcys,no_cys_gly,D_design,L_design,L_hydrophobic_design,D_hydrophobic_design"
+        >
+            <MoveMap name="fdes_mm" >
+                <Jump number="1" setting="0" />
+                <Jump number="2" setting="0" />
+                <Jump number="3" setting="0" />
+                <Jump number="4" setting="0" />
+                <Jump number="5" setting="0" />
+                <Jump number="6" setting="0" />
+                <Jump number="7" setting="0" />
+                <Jump number="8" setting="0" />
+                <Jump number="9" setting="0" />
+                <Span begin="1" end="999" chi="1" bb="0" />
+                <Span begin="234" end="241" chi="1" bb="1" />
+            </MoveMap>
+        </FastDesign>
+ 
+        # A ParsedProtocol encapsulates many previously-defined movers and/or filters into a
+        # single mover.  This instance defines a series of steps carried out for every solution
+        # found by the initial generalized kinematic closure attempts to close the peptide.
+        # These steps include filtering based on total hydrogen bonds, presence of
+        # oversaturated acceptors, and clashes, design and minimization, additional filtering,
+        # and a more expensive FastDesign round if minimal shape complementarity requirements
+        # are met after the low-cost steps carried out thus far.  The pattern is to go from
+        # inexpensive to expensive computations, deciding whether to discard the attempt or to
+        # continue after each step:
+        <ParsedProtocol name="genkic_steps">
+            <Add filter="oversat" />
+            <Add filter="total_hbonds" />
+            <Add filter="low_stringency_clash" />
+            <Add mover="softdesign" />
+            <Add mover="min1" />
+            <Add mover="connect_termini" />
+            <Add filter="oversat" />
+            <Add mover="min2" />
+            <Add mover="connect_termini" />
+            <Add filter="oversat" />
+            <Add filter="total_hbonds_2" />
+            <Add filter="shape1" />
+            <Add mover="fdes" />
+            <Add mover="connect_termini" />
+            <Add filter="oversat" />
+            <Add filter="shape2" />
+        </ParsedProtocol>
+ 
+        # Generalized kinematic closure (GeneralizedKIC) allows efficient sampling of the
+        # closed conformations of a chain of atoms, with rapid solution of a series of equations
+        # to determine values of certain degrees of freedom in order to keep the chain closed.
+        # This instance is configured to perform the initial closure of the peptide macrocycle.
+        # For each closed conformation sampled, the steps listed in the previous ParsedProtocol
+        # mover are carried out, and the conformation iis accepted if and only if all steps pass:
+        <GeneralizedKIC name="genkic" closure_attempts="100" pre_selection_mover="genkic_steps"
+            stop_when_n_solutions_found="1" selector="lowest_energy_selector"
+            selector_scorefunction="r15_highhbond_cst"
+        >
+            <AddResidue res_index="239" />
+            <AddResidue res_index="240" />
+            <AddResidue res_index="241" />
+            <AddResidue res_index="234" />
+            <AddResidue res_index="235" />
+            <AddResidue res_index="236" />
+            <SetPivots res1="239" res2="234" res3="236" atom1="CA" atom2="CA" atom3="CA" />
+            <CloseBond atom1="C" res1="241" atom2="N" res2="234" torsion="180" bondlength="1.328685"
+                angle1="116.2" angle2="121.7" />
+            <AddPerturber effect="randomize_alpha_backbone_by_rama" >
+                <AddResidue index="234" />
+                <AddResidue index="235" />
+                <AddResidue index="236" />
+                <AddResidue index="239" />
+                <AddResidue index="240" />
+                <AddResidue index="241" />
+            </AddPerturber>
+        </GeneralizedKIC>
+ 
+        # A second GeneralizedKIC mover is used to perturb the closed peptide macrocycle during
+        # the Monte Carlo search.  For each perturbation, these steps (checking for
+        # oversaturaetd hbond acceptors, counting total hbonds) are carried out: 
+        <ParsedProtocol name="genkic_perturb_steps">
+            <Add mover="connect_termini" />
+            <Add filter="oversat" />
+            <Add filter="total_hbonds_2" />
+        </ParsedProtocol>
+ 
+        # This is the second GeneralizedKIC mover.  This one is configured to add a small,
+        # random perturbation to an already-closed peptide macrocycle, ensuring that the
+        # macrocycle remains closed after the perturbation.  It is used in the context of a
+        # Monte Carlo search of local conformations:
+        <GeneralizedKIC name="genkic_perturb" closure_attempts="5"
+            pre_selection_mover="genkic_perturb_steps" stop_when_n_solutions_found="1"
+            selector="lowest_rmsd_selector" selector_scorefunction="r15_highhbond_cst"
+        >
+            <AddResidue res_index="239" />
+            <AddResidue res_index="240" />
+            <AddResidue res_index="241" />
+            <AddResidue res_index="234" />
+            <AddResidue res_index="235" />
+            <AddResidue res_index="236" />
+            <SetPivots res1="239" res2="234" res3="236" atom1="CA" atom2="CA" atom3="CA" />
+            <CloseBond atom1="C" res1="241" atom2="N" res2="234" torsion="180" bondlength="1.328685"
+                angle1="116.2" angle2="121.7" />
+            <AddPerturber effect="perturb_dihedral" >
+                <AddAtoms res1="239" atom1="N"  res2="239" atom2="CA" />
+                <AddAtoms res1="239" atom1="CA" res2="239" atom2="C"  />
+                <AddAtoms res1="240" atom1="N"  res2="240" atom2="CA" />
+                <AddAtoms res1="240" atom1="CA" res2="240" atom2="C"  />
+                <AddAtoms res1="241" atom1="N"  res2="241" atom2="CA" />
+                <AddAtoms res1="241" atom1="CA" res2="241" atom2="C"  />
+                <AddAtoms res1="234" atom1="N"  res2="234" atom2="CA" />
+                <AddAtoms res1="234" atom1="CA" res2="234" atom2="C"  />
+                <AddAtoms res1="235" atom1="N"  res2="235" atom2="CA" />
+                <AddAtoms res1="235" atom1="CA" res2="235" atom2="C"  />
+                <AddAtoms res1="236" atom1="N"  res2="236" atom2="CA" />
+                <AddAtoms res1="236" atom1="CA" res2="236" atom2="C"  />
+                <AddValue value="2.5" />
+            </AddPerturber>
+        </GeneralizedKIC>
+ 
+        # These movers are used only for debugging, and not in production runs:
+        <PDBTrajectoryRecorder name="record_traj" stride="1" filename="traj.pdb" cumulate_jobs="0" cumulate_replicas="0" />
+        <PDBTrajectoryRecorder name="record_traj_accepted" stride="1" filename="accepted.pdb" cumulate_jobs="0" cumulate_replicas="0" />
+ 
+        # This is the series of steps performed as the move in the Monte Carlo search.  First,
+        # the stub and the macrocycle are perturbed slightly.  Next, a quick round of design is
+        # carried out, followed by sidechain minimization.  Then, filters are applied.  Then,
+        # the backbone is minimized, followed by more filtering.  If all of this passes, the
+        # move is accepted or rejected by the Metropolis criterion:
+        <ParsedProtocol name="mc_steps">
+            Add mover=record_traj_accepted /> #COMMENTED OUT FOR PRODUCTION RUNS.
+            <Add mover="perturb_tors" />
+            <Add mover="genkic_perturb" />
+            <Add mover="softdesign" />
+            <Add mover="min1" />
+            <Add mover="connect_termini" />
+            Add mover=record_traj /> #COMMENTED OUT FOR PRODUCTION RUNS.
+            <Add filter="oversat" />
+            <Add mover="min2" />
+            <Add mover="connect_termini" />
+            <Add filter="oversat" />
+            <Add filter="total_hbonds_2" />
+        </ParsedProtocol>
+ 
+        # This mover actually carries out the Monte Carlo search of local conformation space,
+        # executing the series of steps in the previous ParsedProtocol as the moves in the
+        # search:
+        <GenericMonteCarlo name="mc_search" mover_name="mc_steps" filter_name="mc_filter" trials="500"
+            temperature="0.5" />
+ 
+        # FsstRelax performs alternating rounds of side-chain packing and minimization, keeping
+        # sequence fixed but ramping repulsive terms in the scoring function.  It is used for
+        # final structural refinement:   
+        <FastRelax name="final_frlx" repeats="3" scorefxn="r15_cst" min_type="dfpmin"
+            task_operations="use_input_rotamer,no_repack_target_far_from_interface"
+        >
+            <MoveMap name="final_frlx_mm" >
+                <Jump number="1" setting="0" />
+                <Jump number="2" setting="0" />
+                <Jump number="3" setting="0" />
+                <Jump number="4" setting="0" />
+                <Jump number="5" setting="0" />
+                <Jump number="6" setting="0" />
+                <Jump number="7" setting="0" />
+                <Jump number="8" setting="0" />
+                <Jump number="9" setting="0" />
+                <Span begin="1" end="999" chi="1" bb="0" />
+                <Span begin="234" end="241" chi="1" bb="1" />
+            </MoveMap>
+        </FastRelax>
+    </MOVERS>
+ 
+    # The PROTOCOLS section strings together previously-defined movers and filters to construct
+    # an overall protocol.  Our overall protocol is to initialize the structure and add cutpoint
+    # variant types, perform an initial closure of the macrocycle in which an initial
+    # sequence is designed, then carry out a Monte Carlo search of the local conformational
+    # space, redesigning the macrocycle sequence at each step.  Final relaxation and filtering
+    # to measure shape complementarity complete the protocol.
+    <PROTOCOLS>
+        <Add mover="extend" />
+        <Add mover="foldtree1" />
+        <Add mover="initialize_tors" />
+        <Add mover="connect_termini" />
+        <Add mover="add_cutpoint_upper_pep" />
+        <Add mover="add_cutpoint_lower_pep" />
+        <Add mover="global_comp" />
+        <Add mover="L_alpha_comp" />
+        <Add mover="D_alpha_comp" />
+        <Add mover="L_beta_comp" />
+        <Add mover="D_beta_comp" />
+        <Add mover="genkic" />
+        Add mover="mc_search" />
+        <Add mover="fdes" />
+        <Add mover="final_frlx" />
+        <Add mover="connect_termini" />
+        <Add filter="oversat" />
+        <Add filter="shape3" />
+    </PROTOCOLS>
+ 
+    # The OUTPUT section defines the scoring function that will be used to produce the final
+    # score for the structure.
+    <OUTPUT scorefxn="r15" />
+</ROSETTASCRIPTS>
