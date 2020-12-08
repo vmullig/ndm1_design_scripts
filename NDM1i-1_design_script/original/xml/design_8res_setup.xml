@@ -1,15 +1,17 @@
 <ROSETTASCRIPTS>
-    
-        # This script takes as input PDB structure 4EXS in which the L-captopril has been converted to a
-        # D-cysteine, L-proline dipeptide stub.  It then extends this stub, prepending three glycine residues
-        # and appending three glycine residues.  Finally, it sets the omega torsion angles of all of these
-        # residues to 180 degrees.
+        # This script takes as input PDB structure 4EXS in which the L-captopril has been
+        # converted to a D-cysteine, L-proline dipeptide stub.  It then extends this stub,
+        # prepending three glycine residues and appending three glycine residues.  Finally, it
+        # sets the omega torsion angles of all of these residues to 180 degrees.
+        # 
         # This script was tested against Rosetta weekly release 2016.46 (Git SHA1
-        # 47669d9d2e9f659f4889dc89ee6305575dd87c2e).  It is NOT RECOMMENDED if the newer scripts for the
-        # Rosetta 3.12 can be used instead, and is provided ONLY for scientific reproduciblity!
+        # 47669d9d2e9f659f4889dc89ee6305575dd87c2e).  It is NOT RECOMMENDED if the newer
+        # scripts for Rosetta 3.13 can be used instead, and is provided ONLY for scientific
+        # reproducibility!
     
-    # Scorefunctions are defined in this section.  These are primarily energy functions, though they can
-    # be modified or enhanced with additional scoring terms for particular tasks.
+    # Scorefunctions are defined in this section.  These are primarily energy functions,
+    # though they can be modified or enhanced with additional scoring terms for particular
+    # tasks.
     <SCOREFXNS>
         <bnv weights="beta_nov15.wts" />
         <bnv_cst weights="beta_nov15_cst.wts" />
@@ -21,10 +23,10 @@
             <Reweight scoretype=fa_elec weight=2.0 />
         </bnv_highhbond_cst>
     </SCOREFXNS>
-
+ 
     # Movers are declared in this section.  These modify a structure in some way.
     <MOVERS>
-        # The PeptideStubMover apppends or prepends residues to an existing structure.
+        # The PeptideStubMover appends or prepends residues to an existing structure.
         <PeptideStubMover name=extend >
             <Prepend anchor_rsd=234 resname="GLY" />
             <Prepend anchor_rsd=234 resname="GLY" />
@@ -33,11 +35,12 @@
             <Append anchor_rsd=239 resname="GLY" />
             <Append anchor_rsd=240 resname="GLY" />
         </PeptideStubMover>
-        
-        # The AtomTree mover is used to define the kinematic relationships in the structure, and
-        # to indicate which sections will move and which will remain fixed when a bond is rotated.
+ 
+        # The AtomTree mover is used to define the kinematic relationships in the structure,
+        # and to indicate which sections will move and which will remain fixed when a bond is
+        # rotated.
         <AtomTree name=foldtree1 fold_tree_file="inputs/foldtree1.txt" />
-        
+ 
         # The SetTorsion mover sets mainchain torsions to user-defined values.
         <SetTorsion name=initialize_tors>
             <Torsion residue=234 torsion_name=omega angle=180.0 />
@@ -49,21 +52,25 @@
             <Torsion residue=239 torsion_name=omega angle=180.0 />
             <Torsion residue=240 torsion_name=omega angle=180.0 />
         </SetTorsion>
-
-        # The DeclareBond mover is used to connect the first and last residues of the newly-extended
-        # peptide with an amide bond.  Currently, this bond geometry will be badly distorted.    
-        <DeclareBond name=connect_termini atom1=N res1=234 atom2=C res2=241 add_termini=true />
+ 
+        # The DeclareBond mover is used to connect the first and last residues of the
+        # newly-extended peptide with an amide bond.  Currently, this bond geometry will be
+        # badly distorted.
+        <DeclareBond name=connect_termini atom1=N res1=234 atom2=C res2=241
+            add_termini=true
+        />
     </MOVERS>
-    
-    # Previously-defined movers are listed here as a series of steps to perform to define a protocol.
+ 
+    # Previously-defined movers are listed here as a series of steps to perform to define a
+    # protocol.
     <PROTOCOLS>
         <Add mover=extend />
         <Add mover=foldtree1 />
         <Add mover=initialize_tors />
         <Add mover=connect_termini />
     </PROTOCOLS>
-    
-    # This section indicates the energy function that will be used to return a final score on output.
+ 
+    # This section indicates the energy function that will be used to return a final score on
+    # output.
     <OUTPUT scorefxn=bnv />
-
 </ROSETTASCRIPTS>
