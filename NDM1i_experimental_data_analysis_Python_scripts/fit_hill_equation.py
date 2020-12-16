@@ -88,7 +88,7 @@ for i in range( len( binding_data[2] ) ) :
         binding_data[2][i] = 0.01
  
 # Function to fit:
-hilleq = lambda x, y0, yinf, IC50 : (y0-yinf)/( 1 + (IC50/ x ) ) + yinf
+hilleq = lambda x, y0, yinf, IC50 : ( y0 - yinf ) / ( 1 + (IC50/ x ) ) + yinf
  
 # Perform the fitting:
 IC50 = float( sys.argv[4] )
