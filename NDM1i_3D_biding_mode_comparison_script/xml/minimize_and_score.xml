@@ -1,13 +1,23 @@
 <!--
 	Uncomment the lines below to allow code editors to auto-complete
-	and display mouse-over help for the RosettaScripts syntax:
+	and display mouse-over help for the RosettaScripts syntax.  Be
+	sure to comment them out before running Rosetta, however, or
+	the syntax-checker will complain.
 -->
-<root
+<!-- <root
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema"
 	xsi:noNamespaceSchemaLocation="rosettascripts.xsd"
-/>
+/> -->
 <ROSETTASCRIPTS>
+	<!-- This script takes as input the design model for peptide NDM1i-3D or the crystal
+	structure of the same and performs some energy minimization.  It then scores the
+	structure and writes the score.  This was to allow comparison of the energies of
+	the two structures.
+	
+	This script was updated for the Rosetta version that was current as of 16 Dec 2020
+	(Git SHA1 8ad9c9f1a9359f05c5c863b9e3c9ccfd2b30bc9a).  Weekly releases after this
+	point, and Rosetta 3.13, will be able to run it. -->
 	<SCOREFXNS>
 		<!-- A scoring function with constraints: -->
 		<ScoreFunction name="r15_cst" weights="ref2015_cst.wts">
