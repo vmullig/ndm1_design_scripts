@@ -1,0 +1,4 @@
+-in:file:s inputs/design_NDM1i_3D.pdb
+-in:file:fullatom
+-parser:protocol xml/minimize_and_score.xml
+-script_vars foldtree_file=inputs/foldtree2.txt
