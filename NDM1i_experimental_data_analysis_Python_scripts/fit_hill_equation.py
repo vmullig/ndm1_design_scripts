@@ -81,6 +81,11 @@ assert len( sys.argv ) == 5, "Expected four arguments: a file to fit to the Hill
  
 # Read the data:
 binding_data = load_binding_data( sys.argv[1] )
+
+# Ensure some tiny uncertainty in all points to avoid divide-by-zero errors during fitting:
+for i in range( len( binding_data[2] ) ) :
+    if binding_data[2][i] < 0.001 :
+        binding_data[2][i] = 0.01
  
 # Function to fit:
 hilleq = lambda x, y0, yinf, IC50 : (y0-yinf)/( 1 + (IC50/ x ) ) + yinf
