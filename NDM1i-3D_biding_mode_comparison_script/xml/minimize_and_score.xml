@@ -65,7 +65,7 @@
         ions, and add suitable constraints: -->
         <SetupMetalsMover name="setup_metals" />
         <!-- Set up the kinematic relationships in the structure. Note that
-        this mover takes a commandline flag specifying the foldtree file, since
+        this mover takes a commandline flag specifying the fold tree file, since
         the design model has a fold tree that passes through the cysteine SG atom,
         while the crystal structure model has a fold tree that passes through the
         glutamate OE2 atom: -->
