@@ -1,4 +1,4 @@
 -in:file:s inputs/xtal_NDM1i_3D_trimmed.pdb
 -in:file:fullatom
 -parser:protocol xml/minimize_and_score.xml
--script_vars foldtree_file=inputs/foldtree.txt
+-script_vars foldtree_file=inputs/foldtree_xtal.txt
