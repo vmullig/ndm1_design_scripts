@@ -1,0 +1,2 @@
+The sample structure and sequence here are peptide NDM1-1G.  This peptide is pulled out of the design
+model and stored on its own as native.pdb (i.e. without the NDM-1 target).

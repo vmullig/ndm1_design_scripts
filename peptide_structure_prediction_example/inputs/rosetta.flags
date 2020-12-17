@@ -1,0 +1,60 @@
+# For an 8mer macrocycle, 80,000 samples is perhaps two to four times the minimum needed:
+-nstruct 80000
+ 
+# The structure of the desired conformation, interpreted as an all-atom structure:
+-in:file:native inputs/native.pdb
+-in:file:fullatom
+ 
+# Automatically set up a master->slave process hierarchy in which all but one process will
+# be used to compute structures:
+-cyclic_peptide:MPI_auto_2level_distribution
+ 
+# Send 25 jobs to each slave at a time.  (Overfrequent communication can create bottlenecks
+# as the master struggles to field all of the requests for jobs):
+-cyclic_peptide:MPI_batchsize_by_level 25
+ 
+# Write output structures to this file, in the Rosetta binary silent file format:
+-out:file:silent out.silent
+ 
+# The sequence file:
+-sequence_file inputs/seq.txt
+ 
+# Options configuring the kinematic closure step and relaxation steps:
+-genkic_closure_attempts 150
+-genkic_min_solution_count 1
+-min_genkic_hbonds 1
+-min_final_hbonds 1
+-fast_relax_rounds 3
+ 
+# Since glycine Ramachandran tables used for scoring are based on statistics from the Protein
+# Data Bank, they are biased towards glycine residues in positive-phi regions of Ramachandran
+# space.  When designing with D-amino acids, the following correction should always be
+# applied:
+-symmetric_gly_tables true
+ 
+# In addition to computing the RMSD and PNear value to the conformation of native.pdb, this
+# option allows the application to compute the RMSD and PNear value to the lowest-energy
+# conformation sampled:
+-cyclic_peptide:compute_rmsd_to_lowest true
+ 
+# Write the lowest-energy 0.02% of structures to disk:
+-cyclic_peptide:MPI_output_fraction 0.0002
+ 
+# Discard samples with a Ramachandran score greater than 5.0 kcal/mol for any residue.
+-cyclic_peptide:rama_cutoff 5.0
+ 
+# Set the lambda parameter (in Angstroms) for computing PNear.  This defines how much a
+# structure can deviate from the desired conformation and still be considered to be “near” it:
+-cyclic_peptide:MPI_pnear_lambda 1.5
+ 
+# Set the value of the Boltzmann temperature to physiological temperature.  (37 degrees C or
+# 310 K corresponds to 0.62 kcal/mol): 
+-cyclic_peptide:MPI_pnear_kbt 0.62
+ 
+# Discard high-energy structures:
+-cyclic_peptide:total_energy_cutoff 20.0
+ 
+# The following two lines ensure that only the summary of results is written to the
+# output log:
+-mute all
+-unmute protocols.cyclic_peptide_predict.SimpleCycpepPredictApplication_MPI protocols.cyclic_peptide_predict.SimpleCycpepPredictApplication_MPI_summary
