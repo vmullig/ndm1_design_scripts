@@ -1,89 +1,93 @@
 <!--
-	Uncomment the lines below to allow code editors to auto-complete
-	and display mouse-over help for the RosettaScripts syntax.  Be
-	sure to comment them out before running Rosetta, however, or
-	the syntax-checker will complain.
+    Uncomment the lines below to allow code editors to auto-complete
+    and display mouse-over help for the RosettaScripts syntax.  Be
+    sure to comment them out before running Rosetta, however, or
+    the syntax-checker will complain.
 -->
 <!-- <root
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	xsi:noNamespaceSchemaLocation="rosettascripts.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xsi:noNamespaceSchemaLocation="rosettascripts.xsd"
 /> -->
 <ROSETTASCRIPTS>
-	<!-- This script takes as input the design model for peptide NDM1i-3D or the crystal
-	structure of the same and performs some energy minimization.  It then scores the
-	structure and writes the score.  This was to allow comparison of the energies of
-	the two structures.
-	
-	This script was updated for the Rosetta version that was current as of 16 Dec 2020
-	(Git SHA1 8ad9c9f1a9359f05c5c863b9e3c9ccfd2b30bc9a).  Weekly releases after this
-	point, and Rosetta 3.13, will be able to run it. -->
-	<SCOREFXNS>
-		<!-- A scoring function with constraints: -->
-		<ScoreFunction name="r15_cst" weights="ref2015_cst.wts">
-			<Reweight scoretype="chainbreak" weight="20.0" />
-		</ScoreFunction>
-		<!-- A scoring function without constraints: -->
-		<ScoreFunction name="r15" weights="ref2015.wts"/>
-	</SCOREFXNS>
-	<RESIDUE_SELECTORS>
-		<!-- Select the first and last residues of the
-		peptide macrocycle: -->
-		<Index name="select_pep_end" resnums="240" />
-		<Index name="select_pep_start" resnums="233" />
-	</RESIDUE_SELECTORS>
-	<SIMPLE_METRICS>
-		<!-- Store the energy before and after minimization.
-		This information will be written out in the PDB
-		file produced at the end of the protocol: -->
-		<TotalEnergyMetric name="pre_score" scorefxn="r15"
-			scoretype="total_score" custom_type="PRE_MIN_SCORE_"
-		/>
-		<TotalEnergyMetric name="post_score" scorefxn="r15"
-			scoretype="total_score" custom_type="POST_MIN_SCORE_"
-		/>
-	</SIMPLE_METRICS>
-	<MOVERS>
-		<!-- After reading in the PDB file, ensure that there is
-		an amide bond connecting the termini of the peptide
-		macrocycle: -->
-		<DeclareBond name="join_termini"
-			res1_selector="select_pep_end" atom1="C"
-			res2_selector="select_pep_start" atom2="N"
-		/>
-		<!-- Add the chainbreak variant types to the termini of the
-		macrocycle.  This allows the energy function (with the
-		chainbreak scoreterm activated) to be used to keep the
-		macrocycle closed during energy-minimization: -->
-		<ModifyVariantType name="add_chainbreak_1"
-			add_type="CUTPOINT_UPPER" residue_selector="select_pep_start"
-		/>
-		<ModifyVariantType name="add_chainbreak_2"
-			add_type="CUTPOINT_LOWER" residue_selector="select_pep_end"
-		/>
-		<!-- Automatically detect bonds to the zinc and cadmium
-		ions, and add suitable constraints: -->
-		<SetupMetalsMover name="setup_metals" />
-		<!-- Set up the kinematic relationships in the structure: -->
-		<AtomTree name="foldtree" fold_tree_file="%%foldtree_file%%" />
-		<!-- Energy-minimize the structure: -->
-		<MinMover name="minmover" scorefxn="r15_cst" type="linmin_iterated"
-			tolerance="0.00000001" bb="true" chi="true" jump="ALL"
-		/>
-	</MOVERS>
-	<PROTOCOLS>
-		<!-- This section lays out the sequence of events, calling
-		previously-defined movers and simple metrics: -->
-		<Add mover="join_termini" />
-		<Add mover="add_chainbreak_1" />
-		<Add mover="add_chainbreak_2" />
-		<Add mover="setup_metals" />
-		<Add mover="foldtree" />
-		<Add metrics="pre_score" />
-		<Add mover="minmover" />
-		<Add metrics="post_score" />
-	</PROTOCOLS>
-	<!-- At the end, score the structure using the unconstrained scoring
-	function, then write the PDB file: -->
-	<OUTPUT scorefxn="r15" />
+    <!-- This script takes as input the design model for peptide NDM1i-3D or the crystal
+    structure of the same and performs some energy minimization.  It then scores the
+    structure and writes the score.  This was to allow comparison of the energies of
+    the two structures.
+    
+    This script was updated for the Rosetta version that was current as of 16 Dec 2020
+    (Git SHA1 8ad9c9f1a9359f05c5c863b9e3c9ccfd2b30bc9a).  Weekly releases after this
+    point, and Rosetta 3.13, will be able to run it. -->
+    <SCOREFXNS>
+        <!-- A scoring function with constraints: -->
+        <ScoreFunction name="r15_cst" weights="ref2015_cst.wts">
+            <Reweight scoretype="chainbreak" weight="20.0" />
+        </ScoreFunction>
+        <!-- A scoring function without constraints: -->
+        <ScoreFunction name="r15" weights="ref2015.wts"/>
+    </SCOREFXNS>
+    <RESIDUE_SELECTORS>
+        <!-- Select the first and last residues of the
+        peptide macrocycle: -->
+        <Index name="select_pep_end" resnums="240" />
+        <Index name="select_pep_start" resnums="233" />
+    </RESIDUE_SELECTORS>
+    <SIMPLE_METRICS>
+        <!-- Store the energy before and after minimization.
+        This information will be written out in the PDB
+        file produced at the end of the protocol: -->
+        <TotalEnergyMetric name="pre_score" scorefxn="r15"
+            scoretype="total_score" custom_type="PRE_MIN_SCORE_"
+        />
+        <TotalEnergyMetric name="post_score" scorefxn="r15"
+            scoretype="total_score" custom_type="POST_MIN_SCORE_"
+        />
+    </SIMPLE_METRICS>
+    <MOVERS>
+        <!-- After reading in the PDB file, ensure that there is
+        an amide bond connecting the termini of the peptide
+        macrocycle: -->
+        <DeclareBond name="join_termini"
+            res1_selector="select_pep_end" atom1="C"
+            res2_selector="select_pep_start" atom2="N"
+        />
+        <!-- Add the chainbreak variant types to the termini of the
+        macrocycle.  This allows the energy function (with the
+        chainbreak scoreterm activated) to be used to keep the
+        macrocycle closed during energy-minimization: -->
+        <ModifyVariantType name="add_chainbreak_1"
+            add_type="CUTPOINT_UPPER" residue_selector="select_pep_start"
+        />
+        <ModifyVariantType name="add_chainbreak_2"
+            add_type="CUTPOINT_LOWER" residue_selector="select_pep_end"
+        />
+        <!-- Automatically detect bonds to the zinc and cadmium
+        ions, and add suitable constraints: -->
+        <SetupMetalsMover name="setup_metals" />
+        <!-- Set up the kinematic relationships in the structure. Note that
+        this mover takes a commandline flag specifying the foldtree file, since
+        the design model has a fold tree that passes through the cysteine SG atom,
+        while the crystal structure model has a fold tree that passes through the
+        glutamate OE2 atom: -->
+        <AtomTree name="foldtree" fold_tree_file="%%foldtree_file%%" />
+        <!-- Energy-minimize the structure: -->
+        <MinMover name="minmover" scorefxn="r15_cst" type="linmin_iterated"
+            tolerance="0.00000001" bb="true" chi="true" jump="ALL"
+        />
+    </MOVERS>
+    <PROTOCOLS>
+        <!-- This section lays out the sequence of events, calling
+        previously-defined movers and simple metrics: -->
+        <Add mover="join_termini" />
+        <Add mover="add_chainbreak_1" />
+        <Add mover="add_chainbreak_2" />
+        <Add mover="setup_metals" />
+        <Add mover="foldtree" />
+        <Add metrics="pre_score" />
+        <Add mover="minmover" />
+        <Add metrics="post_score" />
+    </PROTOCOLS>
+    <!-- At the end, score the structure using the unconstrained scoring
+    function, then write the PDB file: -->
+    <OUTPUT scorefxn="r15" />
 </ROSETTASCRIPTS>
