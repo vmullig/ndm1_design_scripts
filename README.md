@@ -1,6 +1,10 @@
 # Scripts for NDM-1 peptide macrocycle inhibitor design and analysis
 This repositiry includes the scripts used for Mulligan VK, Workman S, Sun T, Rettie S, Li X, Worrall LJ, Craven TW, King DT, Hosseinzadeh P, Watkins AM, Renfrew PD, Guffy S, Labonte JW, Moretti R, Bonneau R, Strynadka NCJ, and Baker D. (2020): Computationally-designed peptide macrocycle inhibitors of New Delhi metallo-beta-lactamase 1.  Manuscript under review.
 
+## Licence
+
+These scripts are made available under the MIT licence.  They are intended to be freely distributed, modified at will, and used in a royalty-free manner.  For full details, see the LICENCE file.
+
 ## Contents
 
 ### Design RosettaScripts XML Scripts
