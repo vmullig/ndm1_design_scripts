@@ -3,7 +3,7 @@ This repositiry includes the scripts used for Mulligan VK, Workman S, Sun T, Ret
 
 ## Licence
 
-These scripts are made available under the MIT licence.  They are intended to be freely distributed, modified at will, and used in a royalty-free manner.  For full details, see the LICENCE file.
+These scripts are made available under the MIT licence.  They are intended to be freely distributed, modified at will, and used in a royalty-free manner.  For full details, see the LICENCE file.  If you use these scripts, please cite the publication above.
 
 ## Contents
 
