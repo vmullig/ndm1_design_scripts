@@ -268,7 +268,7 @@ SOFTWARE.
         # The following filters are combined in the total_hbonds and total_hbonds_2 filter to
         # count the number of internal backbone hydrogen bonds.  Note that this results in an
         # unduly computationally expensive calculation (with intermediate steps repeated), as
-        # well as an inconvenient user interface.  For this reason, it has been replace with
+        # well as an inconvenient user interface.  For this reason, it has been replaced with
         # the PeptideInternalHbondsFilter in newer versions of Rosetta:
         <HbondsToResidue name=hbond1 scorefxn=bnv partners=0 energy_cutoff=-0.25 bb_bb=true
             sidechain=false backbone=true residue=234 from_other_chains=false
