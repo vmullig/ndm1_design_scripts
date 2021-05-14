@@ -160,7 +160,7 @@ SOFTWARE.
         # This selector selects positions far from the interface which are part of the target,
         # which will be fixed during design:
         <And name="select_target_far_from_interface"
-            selectors="select_interface,select_target"
+            selectors="select_not_interface,select_target"
         />
         
         # This selector selects buried residues: 
