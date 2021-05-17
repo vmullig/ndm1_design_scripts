@@ -200,7 +200,7 @@ SOFTWARE.
         # be used by default, and allows the user to add additional types.  We will add the D-
         # amino acid mirror images of the canonical amino acids.
         <CustomBaseTypePackerPalette name="design_palette"
-            additional_residue_types="DALA,DASP,DGLU,DHIS,DILE,DLYS,DLEU,DMET,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR"
+            additional_residue_types="DALA,DASP,DGLU,DPHE,DHIS,DILE,DLYS,DLEU,DMET,DASN,DPRO,DGLN,DARG,DSER,DTHR,DVAL,DTRP,DTYR"
         />
     </PACKER_PALETTES>
  
