@@ -155,7 +155,7 @@ SOFTWARE.
         <Neighborhood name="select_interface" resnums="234-241" distance="8.0" />
  
         # This selector selects positions far from the interface:
-        <Not name="not_interface" selector="select_interface" />
+        <Not name="select_not_interface" selector="select_interface" />
  
         # This selector selects positions far from the interface which are part of the target,
         # which will be fixed during design:
